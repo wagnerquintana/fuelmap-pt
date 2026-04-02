@@ -331,10 +331,16 @@ export default function BottomSheet({
                   style={{ background: priceBg }}
                 >
                   <span className="text-[8px] font-bold text-gray-400">#{idx + 1}</span>
-                  <span className="text-sm font-black leading-tight" style={{ color: priceColor }}>
-                    {price !== null ? price.toFixed(2) : '—'}
-                  </span>
-                  <span className="text-[8px] text-gray-400">€/L</span>
+                  {price !== null ? (
+                    <>
+                      <span className="text-sm font-black leading-tight" style={{ color: priceColor }}>
+                        {price.toFixed(2)}
+                      </span>
+                      <span className="text-[8px] text-gray-400">€/L</span>
+                    </>
+                  ) : (
+                    <span className="text-[8px] font-semibold text-gray-300">Sem preço</span>
+                  )}
                 </div>
 
                 {/* Info */}
