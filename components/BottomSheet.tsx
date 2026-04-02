@@ -167,6 +167,37 @@ export default function BottomSheet({
                 <div key={i} className="rounded-[18px] bg-gray-100 animate-pulse" style={{ minHeight: 128 }} />
               ))}
             </div>
+          ) : top6.length > 0 && cheapestPrice === null ? (
+            <div className="flex flex-col items-center justify-center h-full py-6 text-center px-4">
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+                style={{ background: 'linear-gradient(135deg, #f1f5f9, #e2e8f0)' }}
+              >
+                <Fuel size={24} className="text-gray-300" />
+              </div>
+              <p className="text-sm font-bold text-gray-600 mb-1">
+                {FUEL_LABELS[filters.fuelType] || filters.fuelType} não disponível nesta área
+              </p>
+              <p className="text-xs text-gray-400 mb-4">
+                Nenhum posto encontrado vende este combustível aqui.
+              </p>
+              <div className="flex gap-2 flex-wrap justify-center">
+                <button
+                  onClick={() => onFiltersChange({ fuelType: 'Gasolina simples 95' })}
+                  className="text-xs px-3 py-1.5 rounded-full font-semibold transition-all"
+                  style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)', color: '#fff' }}
+                >
+                  Tentar Gasolina 95
+                </button>
+                <button
+                  onClick={() => onFiltersChange({ fuelType: 'all' })}
+                  className="text-xs px-3 py-1.5 rounded-full font-semibold transition-all"
+                  style={{ background: '#f1f5f9', color: '#6b7280' }}
+                >
+                  Ver todos os combustíveis
+                </button>
+              </div>
+            </div>
           ) : top6.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {top6.map((station, i) => {
