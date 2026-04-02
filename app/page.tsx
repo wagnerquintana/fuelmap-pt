@@ -103,7 +103,7 @@ export default function Home() {
     : stations
 
   return (
-    <div className="flex flex-col w-screen h-screen overflow-hidden bg-slate-50">
+    <div className="flex flex-col w-screen h-screen overflow-hidden" style={{ background: 'linear-gradient(160deg, #eef2f7 0%, #e8edf5 100%)' }}>
       {/* Mapa — ocupa 52vh */}
       <div className="relative flex-shrink-0" style={{ height: '52vh' }}>
         {!authLoading && (
@@ -123,6 +123,14 @@ export default function Home() {
           onFiltersChange={handleFiltersChange}
           onToggleFavorites={() => setShowFavoritesOnly(v => !v)}
           onSignOut={signOut}
+        />
+        {/* Gradiente de transição suave na base do mapa */}
+        <div
+          className="absolute bottom-0 left-0 right-0 pointer-events-none"
+          style={{
+            height: 56,
+            background: 'linear-gradient(to bottom, transparent, rgba(238,242,247,0.85))',
+          }}
         />
       </div>
 

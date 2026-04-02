@@ -98,12 +98,14 @@ export default function BottomSheet({
   }, [sorted, filters.fuelType])
 
   return (
-    <div className="h-full flex flex-col bg-white" style={{ borderTop: '1px solid #e8ecf0' }}>
+    <div className="h-full flex flex-col bg-white" style={{ boxShadow: '0 -8px 40px rgba(59,130,246,0.08)' }}>
+      {/* Faixa accent gradient no topo */}
+      <div className="h-[3px] w-full flex-shrink-0" style={{ background: 'linear-gradient(90deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%)' }} />
 
       {/* Header */}
       <div
         className="px-5 pt-3 pb-3 flex items-center justify-between flex-shrink-0"
-        style={{ borderBottom: '1px solid #f1f5f9' }}
+        style={{ borderBottom: '1px solid #f1f5f9', background: 'linear-gradient(135deg, #ffffff 0%, #fafbff 100%)' }}
       >
         <div>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
@@ -114,11 +116,17 @@ export default function BottomSheet({
               <div className="h-7 w-28 bg-gray-100 rounded-lg animate-pulse" />
             ) : cheapestPrice !== null ? (
               <>
-                <span className="text-3xl font-black text-gray-900 tracking-tight">
+                <span
+                  className="text-3xl font-black tracking-tight"
+                  style={{ background: 'linear-gradient(135deg, #1e293b, #334155)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
+                >
                   {cheapestPrice.toFixed(3)}
                 </span>
-                <span className="text-sm font-medium text-gray-400">€/L</span>
-                <span className="text-[10px] font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                <span className="text-sm font-semibold text-gray-400">€/L</span>
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: 'linear-gradient(135deg, #dcfce7, #d1fae5)', color: '#15803d' }}
+                >
                   melhor preço
                 </span>
               </>
@@ -135,18 +143,19 @@ export default function BottomSheet({
         <div className="flex items-center gap-3">
           {avgPrice !== null && (
             <div className="text-right hidden sm:block">
-              <p className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide">Média</p>
-              <p className="text-sm font-black text-gray-700">{avgPrice.toFixed(3)} €/L</p>
+              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Média</p>
+              <p className="text-sm font-black" style={{ color: '#334155' }}>{avgPrice.toFixed(3)} <span className="text-[10px] font-medium text-gray-400">€/L</span></p>
             </div>
           )}
           <div className="text-right hidden sm:block">
-            <p className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide">Postos</p>
-            <p className="text-sm font-black text-gray-700">{stations.length}</p>
+            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Postos</p>
+            <p className="text-sm font-black" style={{ color: '#334155' }}>{stations.length}</p>
           </div>
           <select
             value={filters.sortBy}
             onChange={e => onFiltersChange({ sortBy: e.target.value as StationFilters['sortBy'] })}
-            className="text-[11px] font-semibold border-0 outline-none bg-gray-100 rounded-xl px-3 py-2 text-gray-600"
+            className="text-[11px] font-bold border-0 outline-none rounded-xl px-3 py-2"
+            style={{ background: '#f1f5f9', color: '#475569' }}
           >
             <option value="price_asc">Mais barato</option>
             <option value="price_desc">Mais caro</option>
@@ -154,10 +163,15 @@ export default function BottomSheet({
           </select>
           <button
             onClick={() => setExpanded(v => !v)}
-            className="p-2 rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+            className="p-2 rounded-xl hover:opacity-80"
+            style={{
+              background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
+              color: 'white',
+              boxShadow: '0 4px 12px rgba(99,102,241,0.30)',
+            }}
             title={expanded ? 'Ver cards' : 'Ver lista completa'}
           >
-            {expanded ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
+            {expanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
           </button>
         </div>
       </div>
@@ -230,8 +244,8 @@ export default function BottomSheet({
                     className="cursor-pointer transition-all duration-200 rounded-[18px] overflow-hidden"
                     style={{
                       boxShadow: isSelected
-                        ? `0 8px 28px ${cfg.glow}, 0 0 0 2px ${cfg.badge}`
-                        : `0 3px 16px ${cfg.glow}`,
+                        ? `0 10px 32px ${cfg.glow}, 0 0 0 2px ${cfg.badge}`
+                        : `0 4px 20px ${cfg.glow}, 0 1px 4px rgba(0,0,0,0.06)`,
                       transform: isSelected ? 'translateY(-2px) scale(1.01)' : 'none',
                     }}
                   >
@@ -257,7 +271,7 @@ export default function BottomSheet({
                     </div>
 
                     {/* Card body */}
-                    <div className="px-3 py-2.5 bg-white">
+                    <div className="px-3 py-2.5" style={{ background: 'linear-gradient(180deg, #ffffff 0%, #fafbff 100%)' }}>
                       <p className="text-xs font-bold text-gray-800 leading-snug line-clamp-2" style={{ minHeight: 28 }}>
                         {station.name}
                       </p>
