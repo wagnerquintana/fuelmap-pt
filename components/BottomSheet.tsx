@@ -172,31 +172,44 @@ export default function BottomSheet({
               ))}
             </div>
           ) : top6.length > 0 && cheapestPrice === null ? (
-            <div className="flex flex-col items-center justify-center h-full py-6 text-center px-4">
-              <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-                style={{ background: 'linear-gradient(135deg, #f1f5f9, #e2e8f0)' }}
-              >
-                <Fuel size={24} className="text-gray-300" />
+            <div className="flex flex-col items-center justify-center h-full text-center px-6">
+              {/* Ícone decorativo */}
+              <div className="relative mb-5">
+                <div
+                  className="w-20 h-20 rounded-3xl flex items-center justify-center"
+                  style={{ background: 'linear-gradient(135deg, #eff6ff, #f5f3ff)' }}
+                >
+                  <Fuel size={32} style={{ color: '#c7d2fe' }} />
+                </div>
+                <div
+                  className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-white font-black text-xs"
+                  style={{ background: 'linear-gradient(135deg, #f97316, #ef4444)' }}
+                >
+                  ✕
+                </div>
               </div>
-              <p className="text-sm font-bold text-gray-600 mb-1">
-                {FUEL_LABELS[filters.fuelType] || filters.fuelType} não disponível neste posto de combustível.
+
+              {/* Texto */}
+              <p className="text-base font-black text-gray-800 mb-1 leading-snug">
+                {FUEL_LABELS[filters.fuelType] || filters.fuelType}
               </p>
-              <p className="text-xs text-gray-400 mb-4">
-                Nenhum posto encontrado vende este combustível aqui.
+              <p className="text-sm font-medium text-gray-400 mb-6">
+                não disponível neste posto de combustível.
               </p>
-              <div className="flex gap-2 flex-wrap justify-center">
+
+              {/* Botões */}
+              <div className="flex flex-col gap-2.5 w-full max-w-xs">
                 <button
                   onClick={() => onFiltersChange({ fuelType: 'Gasolina simples 95' })}
-                  className="text-xs px-3 py-1.5 rounded-full font-semibold transition-all"
-                  style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)', color: '#fff' }}
+                  className="w-full py-3 rounded-2xl font-bold text-sm text-white transition-all hover:opacity-90 active:scale-95"
+                  style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)', boxShadow: '0 4px 16px rgba(99,102,241,0.35)' }}
                 >
-                  Tentar Gasolina 95
+                  Mudar para Gasolina 95
                 </button>
                 <button
                   onClick={() => onFiltersChange({ fuelType: 'all' })}
-                  className="text-xs px-3 py-1.5 rounded-full font-semibold transition-all"
-                  style={{ background: '#f1f5f9', color: '#6b7280' }}
+                  className="w-full py-3 rounded-2xl font-bold text-sm transition-all hover:bg-gray-100 active:scale-95"
+                  style={{ background: '#f8fafc', color: '#64748b', border: '1.5px solid #e2e8f0' }}
                 >
                   Ver todos os combustíveis
                 </button>
