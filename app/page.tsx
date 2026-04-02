@@ -102,8 +102,21 @@ export default function Home() {
     ? stations.filter(s => favorites.has(s.id))
     : stations
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'FuelMap PT',
+    url: 'https://fuelmap-pt.vercel.app',
+    description: 'Mapa interativo de preços de combustíveis em Portugal com dados atualizados diariamente da DGEG.',
+    applicationCategory: 'UtilitiesApplication',
+    operatingSystem: 'Any',
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+    author: { '@type': 'Organization', name: 'FuelMap PT' },
+  }
+
   return (
     <div className="flex flex-col w-screen h-screen overflow-hidden" style={{ background: 'linear-gradient(160deg, #eef2f7 0%, #e8edf5 100%)' }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* Mapa — ocupa 52vh */}
       <div className="relative flex-shrink-0" style={{ height: '52vh' }}>
         {!authLoading && (
