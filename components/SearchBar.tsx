@@ -117,27 +117,29 @@ export default function SearchBar({
         )}
       </div>
 
-      {/* Pills de combustível */}
-      <div className="flex gap-1.5 pointer-events-auto flex-wrap justify-center">
+      {/* Pills de combustível — gradient border technique */}
+      <div className="flex gap-2 pointer-events-auto flex-wrap justify-center">
         {FUEL_TYPES.map(type => {
           const active = filters.fuelType === type
           return (
             <button
               key={type}
               onClick={() => onFiltersChange({ fuelType: type as FilterFuelType })}
-              className="text-[11px] px-3 py-1.5 rounded-full font-bold"
-              style={{
-                background: active
-                  ? 'linear-gradient(135deg, #3b82f6, #6366f1)'
-                  : 'rgba(255,255,255,0.82)',
-                color: active ? '#fff' : '#64748b',
+              className="text-[11px] px-3.5 py-1.5 rounded-full font-bold"
+              style={active ? {
+                /* Gradient border trick: padding-box + border-box */
+                background: 'linear-gradient(rgba(241,245,255,0.95), rgba(241,245,255,0.95)) padding-box, linear-gradient(135deg, #3b82f6, #8b5cf6) border-box',
+                border: '1.5px solid transparent',
+                color: '#4f46e5',
+                boxShadow: '0 0 0 3px rgba(99,102,241,0.10), 0 4px 16px rgba(59,130,246,0.18)',
+                transform: 'translateY(-1px)',
+                backdropFilter: 'blur(16px)',
+              } : {
+                background: 'rgba(255,255,255,0.78)',
+                border: '1px solid rgba(203,213,225,0.5)',
+                color: '#94a3b8',
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
-                boxShadow: active
-                  ? '0 4px 14px rgba(99,102,241,0.38)'
-                  : '0 2px 6px rgba(0,0,0,0.07), 0 0 0 1px rgba(255,255,255,0.6) inset',
-                border: active ? 'none' : '1px solid rgba(226,232,240,0.5)',
-                transform: active ? 'scale(1.03)' : 'scale(1)',
               }}
             >
               {FUEL_LABELS[type]}

@@ -163,15 +163,15 @@ export default function BottomSheet({
           </select>
           <button
             onClick={() => setExpanded(v => !v)}
-            className="p-2 rounded-xl hover:opacity-80"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold text-[11px] hover:opacity-90"
             style={{
-              background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
-              color: 'white',
-              boxShadow: '0 4px 12px rgba(99,102,241,0.30)',
+              background: 'linear-gradient(rgba(241,245,255,0.95), rgba(241,245,255,0.95)) padding-box, linear-gradient(135deg, #3b82f6, #8b5cf6) border-box',
+              border: '1.5px solid transparent',
+              color: '#4f46e5',
+              boxShadow: '0 0 0 3px rgba(99,102,241,0.08), 0 4px 12px rgba(59,130,246,0.15)',
             }}
-            title={expanded ? 'Ver cards' : 'Ver lista completa'}
           >
-            {expanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+            {expanded ? <><ChevronDown size={12} strokeWidth={2.5} />Cards</> : <><ChevronUp size={12} strokeWidth={2.5} />Ver lista</>}
           </button>
         </div>
       </div>
@@ -213,17 +213,32 @@ export default function BottomSheet({
 
               {/* Botões */}
               <div className="flex flex-col gap-2.5 w-full max-w-xs">
+                {/* Primary — gradiente com shine interno */}
                 <button
                   onClick={() => onFiltersChange({ fuelType: 'Gasolina simples 95' })}
-                  className="w-full py-3 rounded-2xl font-bold text-sm text-white transition-all hover:opacity-90 active:scale-95"
-                  style={{ background: 'linear-gradient(135deg, #3b82f6, #6366f1)', boxShadow: '0 4px 16px rgba(99,102,241,0.35)' }}
+                  className="w-full py-3 rounded-2xl font-bold text-sm text-white active:scale-[0.98] relative overflow-hidden"
+                  style={{
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 60%, #8b5cf6 100%)',
+                    boxShadow: '0 6px 24px rgba(99,102,241,0.40), 0 1px 0 rgba(255,255,255,0.25) inset',
+                  }}
                 >
+                  {/* Shine overlay */}
+                  <span
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ background: 'linear-gradient(115deg, rgba(255,255,255,0.18) 0%, transparent 55%)' }}
+                  />
                   Mudar para Gasolina 95
                 </button>
+
+                {/* Secondary — gradient border glass */}
                 <button
                   onClick={() => onFiltersChange({ fuelType: 'all' })}
-                  className="w-full py-3 rounded-2xl font-bold text-sm transition-all hover:bg-gray-100 active:scale-95"
-                  style={{ background: '#f8fafc', color: '#64748b', border: '1.5px solid #e2e8f0' }}
+                  className="w-full py-3 rounded-2xl font-bold text-sm active:scale-[0.98]"
+                  style={{
+                    background: 'linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)) padding-box, linear-gradient(135deg, #cbd5e1, #94a3b8) border-box',
+                    border: '1.5px solid transparent',
+                    color: '#475569',
+                  }}
                 >
                   Ver todos os combustíveis
                 </button>
