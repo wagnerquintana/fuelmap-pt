@@ -1,5 +1,61 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════
+   M1 — Design Tokens (CSS Custom Properties)
+   ═══════════════════════════════════════════════ */
+:root {
+  /* Brand gradient */
+  --color-primary:   #3b82f6;
+  --color-secondary: #6366f1;
+  --gradient-brand:  linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  --gradient-bg:     linear-gradient(160deg, #eef2f7 0%, #e8edf5 100%);
+
+  /* Surface layers */
+  --surface:  #ffffff;
+  --surface2: #f8fafc;
+  --surface3: rgba(241,245,255,0.95);
+
+  /* Text scale */
+  --text:       #1e293b;
+  --text-muted: #94a3b8;
+  --text-dim:   #cbd5e1;
+
+  /* Borders */
+  --border:       rgba(226,232,240,0.8);
+  --border-hover: rgba(148,163,184,0.5);
+
+  /* Accent (same as secondary — unified) */
+  --accent: #6366f1;
+
+  /* Status palette */
+  --green:     #10b981;
+  --green-dim: rgba(16,185,129,0.10);
+  --gold:      #f59e0b;
+  --gold-dim:  rgba(245,158,11,0.10);
+  --red:       #ef4444;
+  --red-dim:   rgba(239,68,68,0.10);
+
+  /* Typography extras */
+  --font-size-2xs: 0.625rem;   /* 10px */
+  --font-size-xs:  0.6875rem;  /* 11px */
+
+  /* Overlay / backdrops */
+  --backdrop-bg:   rgba(0,0,0,0.55);
+  --backdrop-blur: blur(8px);
+
+  /* Border radius scale */
+  --radius-sm:  0.5rem;    /* 8px  */
+  --radius-md:  0.75rem;   /* 12px */
+  --radius-lg:  1rem;      /* 16px */
+  --radius-xl:  1.25rem;   /* 20px */
+  --radius-2xl: 1.5rem;    /* 24px */
+  --radius-3xl: 1.75rem;   /* 28px */
+
+  /* Shadows */
+  --shadow-card:  0 8px 32px rgba(59,130,246,0.10), 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-modal: 0 40px 80px rgba(0,0,0,0.25);
+}
+
 html, body {
   height: 100%;
   overflow: hidden;
@@ -17,6 +73,30 @@ html, body {
 /* Transições globais suaves */
 button, a, [role="button"] {
   transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Animações */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Label utilitária — uppercase tracking para rótulos pequenos */
+.label-xs {
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 /* Efeito glass premium */

@@ -50,7 +50,7 @@ export default function AlertModal({ station, defaultFuelType, onClose }: AlertM
   return (
     <div
       className="fixed inset-0 flex items-center justify-center z-[9999] p-4"
-      style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }}
+      style={{ background: 'var(--backdrop-bg)', backdropFilter: 'var(--backdrop-blur)' }}
     >
       <div
         className="w-full max-w-sm rounded-2xl p-6 relative"

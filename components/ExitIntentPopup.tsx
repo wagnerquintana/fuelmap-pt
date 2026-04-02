@@ -52,8 +52,8 @@ export default function ExitIntentPopup({ district, onClose }: ExitIntentPopupPr
     <div
       className="fixed inset-0 flex items-center justify-center z-[9999] p-4 transition-all duration-300"
       style={{
-        background: visible ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0)',
-        backdropFilter: visible ? 'blur(6px)' : 'none',
+        background: visible ? 'var(--backdrop-bg)' : 'rgba(0,0,0,0)',
+        backdropFilter: visible ? 'var(--backdrop-blur)' : 'none',
       }}
     >
       <div

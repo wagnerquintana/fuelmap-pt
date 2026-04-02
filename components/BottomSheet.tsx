@@ -24,6 +24,7 @@ const RANK_CONFIG = [
     glow: 'rgba(0,200,83,0.22)',
     badge: '#00c853',
     badgeBg: 'rgba(0,200,83,0.10)',
+    softBg: '#f0fdf4',
     icon: <TrendingDown size={10} />,
   },
   {
@@ -32,6 +33,7 @@ const RANK_CONFIG = [
     glow: 'rgba(59,130,246,0.22)',
     badge: '#3b82f6',
     badgeBg: 'rgba(59,130,246,0.10)',
+    softBg: '#eff6ff',
     icon: <Fuel size={10} />,
   },
   {
@@ -40,6 +42,7 @@ const RANK_CONFIG = [
     glow: 'rgba(245,158,11,0.22)',
     badge: '#f59e0b',
     badgeBg: 'rgba(245,158,11,0.10)',
+    softBg: '#fffbeb',
     icon: <Award size={10} />,
   },
   {
@@ -48,6 +51,7 @@ const RANK_CONFIG = [
     glow: 'rgba(167,139,250,0.22)',
     badge: '#8b5cf6',
     badgeBg: 'rgba(139,92,246,0.10)',
+    softBg: '#f5f3ff',
     icon: <Star size={10} />,
   },
   {
@@ -56,6 +60,7 @@ const RANK_CONFIG = [
     glow: 'rgba(6,182,212,0.22)',
     badge: '#06b6d4',
     badgeBg: 'rgba(6,182,212,0.10)',
+    softBg: '#ecfeff',
     icon: <MapPin size={10} />,
   },
   {
@@ -64,9 +69,24 @@ const RANK_CONFIG = [
     glow: 'rgba(236,72,153,0.22)',
     badge: '#ec4899',
     badgeBg: 'rgba(236,72,153,0.10)',
+    softBg: '#fdf2f8',
     icon: <TrendingDown size={10} />,
   },
 ]
+
+function getPriceColor(price: number | null) {
+  if (price === null) return '#d1d5db'
+  if (price < 1.5) return '#00c853'
+  if (price < 1.7) return '#3b82f6'
+  return '#ef4444'
+}
+
+function getPriceBg(price: number | null) {
+  if (price === null) return '#f9fafb'
+  if (price < 1.5) return '#f0fdf4'
+  if (price < 1.7) return '#eff6ff'
+  return '#fef2f2'
+}
 
 export default function BottomSheet({
   stations, loading, filters, selectedStation,
@@ -97,6 +117,10 @@ export default function BottomSheet({
     return sample.reduce((sum, s) => sum + getPriceForFuel(s, filters.fuelType)!, 0) / sample.length
   }, [sorted, filters.fuelType])
 
+  const savings = cheapestPrice !== null && avgPrice !== null
+    ? avgPrice - cheapestPrice
+    : null
+
   return (
     <div className="h-full flex flex-col bg-white" style={{ boxShadow: '0 -8px 40px rgba(59,130,246,0.08)' }}>
       {/* Faixa accent gradient no topo */}
@@ -104,14 +128,13 @@ export default function BottomSheet({
 
       {/* Header */}
       <div
-        className="px-5 pt-3 pb-3 flex items-center justify-between flex-shrink-0"
+        className="px-4 pt-3 pb-2.5 flex items-center justify-between flex-shrink-0 gap-3"
         style={{ borderBottom: '1px solid #f1f5f9', background: 'linear-gradient(135deg, #ffffff 0%, #fafbff 100%)' }}
       >
-        <div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-            {FUEL_LABELS[filters.fuelType] || filters.fuelType}
-          </p>
-          <div className="flex items-baseline gap-2 mt-0.5">
+        {/* Preço + label */}
+        <div className="min-w-0">
+          <p className="label-xs">{FUEL_LABELS[filters.fuelType] || filters.fuelType}</p>
+          <div className="flex items-baseline gap-2 mt-0.5 flex-wrap">
             {loading ? (
               <div className="h-7 w-28 bg-gray-100 rounded-lg animate-pulse" />
             ) : cheapestPrice !== null ? (
@@ -129,10 +152,15 @@ export default function BottomSheet({
                 >
                   melhor preço
                 </span>
+                {savings !== null && savings > 0 && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
+                    poupa {savings.toFixed(3)} €/L
+                  </span>
+                )}
               </>
             ) : stations.length > 0 ? (
-              <span className="text-sm font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-xl">
-                {FUEL_LABELS[filters.fuelType] || filters.fuelType} não disponível neste posto de combustível.
+              <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-xl">
+                {FUEL_LABELS[filters.fuelType] || filters.fuelType} não disponível.
               </span>
             ) : (
               <span className="text-2xl font-black text-gray-300">—</span>
@@ -140,21 +168,26 @@ export default function BottomSheet({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Stats + controlos */}
+        <div className="flex items-center gap-2 shrink-0">
           {avgPrice !== null && (
-            <div className="text-right hidden sm:block">
-              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Média</p>
-              <p className="text-sm font-black" style={{ color: '#334155' }}>{avgPrice.toFixed(3)} <span className="text-[10px] font-medium text-gray-400">€/L</span></p>
+            <div className="text-right">
+              <p className="label-xs">Média</p>
+              <p className="text-xs font-black" style={{ color: '#334155' }}>
+                {avgPrice.toFixed(3)}<span className="text-[9px] font-medium text-gray-400 ml-0.5">€/L</span>
+              </p>
             </div>
           )}
-          <div className="text-right hidden sm:block">
-            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Postos</p>
-            <p className="text-sm font-black" style={{ color: '#334155' }}>{stations.length}</p>
+          <div className="w-px h-7 bg-gray-100" />
+          <div className="text-right">
+            <p className="label-xs">Postos</p>
+            <p className="text-xs font-black" style={{ color: '#334155' }}>{stations.length}</p>
           </div>
+          <div className="w-px h-7 bg-gray-100" />
           <select
             value={filters.sortBy}
             onChange={e => onFiltersChange({ sortBy: e.target.value as StationFilters['sortBy'] })}
-            className="text-[11px] font-bold border-0 outline-none rounded-xl px-3 py-2"
+            className="text-[11px] font-bold border-0 outline-none rounded-xl px-2.5 py-1.5"
             style={{ background: '#f1f5f9', color: '#475569' }}
           >
             <option value="price_asc">Mais barato</option>
@@ -171,23 +204,33 @@ export default function BottomSheet({
               boxShadow: '0 0 0 3px rgba(99,102,241,0.08), 0 4px 12px rgba(59,130,246,0.15)',
             }}
           >
-            {expanded ? <><ChevronDown size={12} strokeWidth={2.5} />Cards</> : <><ChevronUp size={12} strokeWidth={2.5} />Ver lista</>}
+            {expanded
+              ? <><ChevronDown size={12} strokeWidth={2.5} />Cards</>
+              : <><ChevronUp size={12} strokeWidth={2.5} />Ver lista</>
+            }
           </button>
         </div>
       </div>
 
-      {/* Top 6 — grid 2×3 (mobile: 2 cols, tablet+: 3 cols) */}
+      {/* ═══ TOP 6 CARDS ═══ */}
       {!expanded && (
-        <div className="flex-1 overflow-auto px-5 py-4">
+        <div className="flex-1 overflow-auto px-4 py-3">
           {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="rounded-[18px] bg-gray-100 animate-pulse" style={{ minHeight: 128 }} />
+                <div key={i} className="rounded-[18px] overflow-hidden animate-pulse">
+                  <div className="h-10 bg-gray-200" />
+                  <div className="bg-gray-100 px-3 py-2.5 space-y-2">
+                    <div className="h-3 bg-gray-200 rounded w-3/4" />
+                    <div className="h-2 bg-gray-200 rounded w-1/2" />
+                    <div className="h-6 bg-gray-200 rounded w-1/3 mt-3" />
+                  </div>
+                </div>
               ))}
             </div>
           ) : top6.length > 0 && cheapestPrice === null ? (
+            /* ─── Estado: combustível sem preços ─── */
             <div className="flex flex-col items-center justify-center h-full text-center px-6">
-              {/* Ícone decorativo */}
               <div className="relative mb-5">
                 <div
                   className="w-20 h-20 rounded-3xl flex items-center justify-center"
@@ -202,18 +245,13 @@ export default function BottomSheet({
                   ✕
                 </div>
               </div>
-
-              {/* Texto */}
               <p className="text-base font-black text-gray-800 mb-1 leading-snug">
                 {FUEL_LABELS[filters.fuelType] || filters.fuelType}
               </p>
               <p className="text-sm font-medium text-gray-400 mb-6">
                 não disponível neste posto de combustível.
               </p>
-
-              {/* Botões */}
               <div className="flex flex-col gap-2.5 w-full max-w-xs">
-                {/* Primary — gradiente com shine interno */}
                 <button
                   onClick={() => onFiltersChange({ fuelType: 'Gasolina simples 95' })}
                   className="w-full py-3 rounded-2xl font-bold text-sm text-white active:scale-[0.98] relative overflow-hidden"
@@ -222,15 +260,9 @@ export default function BottomSheet({
                     boxShadow: '0 6px 24px rgba(99,102,241,0.40), 0 1px 0 rgba(255,255,255,0.25) inset',
                   }}
                 >
-                  {/* Shine overlay */}
-                  <span
-                    className="absolute inset-0 pointer-events-none"
-                    style={{ background: 'linear-gradient(115deg, rgba(255,255,255,0.18) 0%, transparent 55%)' }}
-                  />
+                  <span className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(115deg, rgba(255,255,255,0.18) 0%, transparent 55%)' }} />
                   Mudar para Gasolina 95
                 </button>
-
-                {/* Secondary — gradient border glass */}
                 <button
                   onClick={() => onFiltersChange({ fuelType: 'all' })}
                   className="w-full py-3 rounded-2xl font-bold text-sm active:scale-[0.98]"
@@ -245,73 +277,102 @@ export default function BottomSheet({
               </div>
             </div>
           ) : top6.length > 0 ? (
+            /* ─── Grid de cards ─── */
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {top6.map((station, i) => {
                 const price = getPriceForFuel(station, filters.fuelType)
                 const isFav = favorites.has(station.id)
                 const cfg = RANK_CONFIG[i]
                 const isSelected = selectedStation?.id === station.id
+                // Savings vs cheapest (só para postos 2-6)
+                const savingsVsFirst = i > 0 && price !== null && cheapestPrice !== null
+                  ? price - cheapestPrice
+                  : null
 
                 return (
                   <div
                     key={station.id}
                     onClick={() => onSelectStation(station)}
-                    className="cursor-pointer transition-all duration-200 rounded-[18px] overflow-hidden"
+                    className="animate-slide-up cursor-pointer rounded-[18px] overflow-hidden"
                     style={{
+                      animationDelay: `${i * 45}ms`,
                       boxShadow: isSelected
-                        ? `0 10px 32px ${cfg.glow}, 0 0 0 2px ${cfg.badge}`
+                        ? `0 12px 36px ${cfg.glow}, 0 0 0 2px ${cfg.badge}`
                         : `0 4px 20px ${cfg.glow}, 0 1px 4px rgba(0,0,0,0.06)`,
-                      transform: isSelected ? 'translateY(-2px) scale(1.01)' : 'none',
+                      transform: isSelected ? 'translateY(-2px) scale(1.02)' : 'none',
+                      transition: 'box-shadow 0.2s, transform 0.2s',
                     }}
                   >
-                    {/* Gradient header */}
+                    {/* ── Gradient header ── */}
                     <div
-                      className="px-3 pt-2.5 pb-2 flex items-center justify-between"
-                      style={{ background: cfg.gradient }}
+                      className="px-3 pt-2 pb-2 flex items-center justify-between"
+                      style={{ background: cfg.gradient, position: 'relative', overflow: 'hidden' }}
                     >
-                      <div
-                        className="flex items-center gap-1 px-2 py-0.5 rounded-full"
-                        style={{ background: 'rgba(255,255,255,0.22)' }}
-                      >
-                        <span style={{ color: 'white', opacity: 0.9 }}>{cfg.icon}</span>
-                        <span className="text-[9px] font-bold text-white">{cfg.label}</span>
+                      {/* Shine no header */}
+                      <span className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(120deg, rgba(255,255,255,0.16) 0%, transparent 60%)' }} />
+
+                      {/* Rank badge */}
+                      <div className="flex items-center gap-1.5">
+                        <div
+                          className="w-6 h-6 rounded-lg flex items-center justify-center font-black text-[11px]"
+                          style={{ background: 'rgba(0,0,0,0.18)', color: 'white' }}
+                        >
+                          {i + 1}
+                        </div>
+                        <span className="text-[9px] font-bold text-white opacity-90">{cfg.label}</span>
                       </div>
+
+                      {/* Favorito */}
                       <span
                         onClick={e => { e.stopPropagation(); onToggleFavorite(station.id) }}
-                        className="cursor-pointer p-1 rounded-full"
-                        style={{ background: 'rgba(255,255,255,0.2)', color: isFav ? '#fef08a' : 'rgba(255,255,255,0.7)' }}
+                        className="cursor-pointer p-1 rounded-full transition-transform hover:scale-110"
+                        style={{ background: 'rgba(255,255,255,0.2)', color: isFav ? '#fef08a' : 'rgba(255,255,255,0.65)' }}
                       >
                         <Star size={11} fill={isFav ? 'currentColor' : 'none'} />
                       </span>
                     </div>
 
-                    {/* Card body */}
-                    <div className="px-3 py-2.5" style={{ background: 'linear-gradient(180deg, #ffffff 0%, #fafbff 100%)' }}>
-                      <p className="text-xs font-bold text-gray-800 leading-snug line-clamp-2" style={{ minHeight: 28 }}>
+                    {/* ── Card body ── */}
+                    <div className="px-3 pt-2.5 pb-2" style={{ background: 'linear-gradient(180deg, #ffffff 0%, #fafbff 100%)' }}>
+                      {/* Nome */}
+                      <p className="text-xs font-bold text-gray-800 leading-snug line-clamp-2" style={{ minHeight: 30 }}>
                         {station.name}
                       </p>
+
+                      {/* Marca */}
                       {station.brand && (
                         <p className="text-[9px] font-black uppercase tracking-widest mt-0.5" style={{ color: cfg.badge }}>
                           {station.brand}
                         </p>
                       )}
+
+                      {/* Localização */}
                       {station.municipality && (
                         <div className="flex items-center gap-1 mt-1">
                           <MapPin size={8} className="text-gray-300 shrink-0" />
                           <p className="text-[9px] text-gray-400 truncate">{station.municipality}</p>
                         </div>
                       )}
+
+                      {/* Preço + Bell */}
                       <div
-                        className="mt-2 pt-2 flex items-center justify-between"
+                        className="mt-2 pt-2 flex items-end justify-between"
                         style={{ borderTop: `1.5px solid ${cfg.badgeBg}` }}
                       >
-                        <div className="flex items-baseline gap-0.5">
+                        <div>
                           {price !== null ? (
                             <>
-                              <span className="text-xl font-black tracking-tight" style={{ color: cfg.badge }}>
-                                {price.toFixed(3)}
-                              </span>
-                              <span className="text-[9px] font-semibold text-gray-400">€/L</span>
+                              <div className="flex items-baseline gap-0.5">
+                                <span className="text-[22px] font-black tracking-tight leading-none" style={{ color: cfg.badge }}>
+                                  {price.toFixed(3)}
+                                </span>
+                                <span className="text-[9px] font-semibold text-gray-400 mb-0.5">€/L</span>
+                              </div>
+                              {savingsVsFirst !== null && (
+                                <p className="text-[9px] font-semibold mt-0.5" style={{ color: '#94a3b8' }}>
+                                  +{savingsVsFirst.toFixed(3)} vs 1º
+                                </p>
+                              )}
                             </>
                           ) : (
                             <span className="text-[10px] font-semibold text-gray-300">Sem preço</span>
@@ -319,7 +380,7 @@ export default function BottomSheet({
                         </div>
                         <span
                           onClick={e => { e.stopPropagation(); setAlertStation(station) }}
-                          className="cursor-pointer p-1.5 rounded-xl"
+                          className="cursor-pointer p-1.5 rounded-xl hover:scale-110 transition-transform"
                           style={{ background: cfg.badgeBg, color: cfg.badge }}
                           title="Criar alerta de preço"
                         >
@@ -332,37 +393,32 @@ export default function BottomSheet({
               })}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full py-8 text-gray-300">
-              <p className="text-sm">Nenhum posto encontrado</p>
+            <div className="flex items-center justify-center h-full">
+              <p className="text-sm text-gray-300">Nenhum posto encontrado</p>
             </div>
           )}
         </div>
       )}
 
-      {/* Lista expandida */}
+      {/* ═══ LISTA EXPANDIDA ═══ */}
       {expanded && (
         <div className="flex-1 overflow-y-auto">
           {sorted.map((station, idx) => {
             const price = getPriceForFuel(station, filters.fuelType)
             const isFav = favorites.has(station.id)
             const isSelected = selectedStation?.id === station.id
-            const priceColor = price === null ? '#d1d5db'
-              : price < 1.5 ? '#00c853'
-              : price < 1.7 ? '#3b82f6'
-              : '#ef4444'
-            const priceBg = price === null ? '#f9fafb'
-              : price < 1.5 ? '#f0fdf4'
-              : price < 1.7 ? '#eff6ff'
-              : '#fef2f2'
+            const priceColor = getPriceColor(price)
+            const priceBg = getPriceBg(price)
 
             return (
               <div
                 key={station.id}
                 onClick={() => onSelectStation(station)}
-                className="flex items-center gap-3 px-5 py-3 cursor-pointer transition-colors"
+                className="flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors relative"
                 style={{
                   background: isSelected ? '#f0f7ff' : 'transparent',
                   borderBottom: '1px solid #f8fafc',
+                  borderLeft: isSelected ? `3px solid #3b82f6` : '3px solid transparent',
                 }}
                 onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#f9fafb' }}
                 onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
@@ -372,16 +428,16 @@ export default function BottomSheet({
                   className="w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0"
                   style={{ background: priceBg }}
                 >
-                  <span className="text-[8px] font-bold text-gray-400">#{idx + 1}</span>
+                  <span className="text-[8px] font-bold" style={{ color: priceColor, opacity: 0.6 }}>#{idx + 1}</span>
                   {price !== null ? (
                     <>
-                      <span className="text-sm font-black leading-tight" style={{ color: priceColor }}>
-                        {price.toFixed(2)}
+                      <span className="text-[13px] font-black leading-tight" style={{ color: priceColor }}>
+                        {price.toFixed(3)}
                       </span>
-                      <span className="text-[8px] text-gray-400">€/L</span>
+                      <span className="text-[7px] font-semibold text-gray-400">€/L</span>
                     </>
                   ) : (
-                    <span className="text-[8px] font-semibold text-gray-300">Sem preço</span>
+                    <span className="text-[8px] font-semibold text-gray-300 text-center px-1 leading-tight">Sem preço</span>
                   )}
                 </div>
 
@@ -406,8 +462,8 @@ export default function BottomSheet({
                           key={f.type}
                           className="text-[9px] px-1.5 py-0.5 rounded-full font-semibold"
                           style={{
-                            background: (f.price ?? 0) < 1.5 ? '#f0fdf4' : (f.price ?? 0) < 1.7 ? '#eff6ff' : '#fef2f2',
-                            color: (f.price ?? 0) < 1.5 ? '#00c853' : (f.price ?? 0) < 1.7 ? '#3b82f6' : '#ef4444',
+                            background: getPriceBg(f.price ?? null),
+                            color: getPriceColor(f.price ?? null),
                           }}
                         >
                           {f.type.replace('Gasolina simples ', 'G').replace('Gasolina especial ', 'G+').replace('Gasóleo simples', 'Gsl').replace('Gasóleo especial', 'Gsl+')} {formatPrice(f.price)}
@@ -421,14 +477,14 @@ export default function BottomSheet({
                 <div className="flex flex-col gap-1 shrink-0">
                   <span
                     onClick={e => { e.stopPropagation(); onToggleFavorite(station.id) }}
-                    className="p-2 rounded-xl cursor-pointer transition-all"
+                    className="p-2 rounded-xl cursor-pointer transition-all hover:scale-110"
                     style={{ background: isFav ? '#fef3c7' : '#f9fafb', color: isFav ? '#f59e0b' : '#d1d5db' }}
                   >
                     <Star size={13} fill={isFav ? 'currentColor' : 'none'} />
                   </span>
                   <span
                     onClick={e => { e.stopPropagation(); setAlertStation(station) }}
-                    className="p-2 rounded-xl cursor-pointer transition-all"
+                    className="p-2 rounded-xl cursor-pointer transition-all hover:scale-110"
                     style={{ background: '#fff7ed', color: '#f97316' }}
                     title="Criar alerta de preço"
                   >
@@ -441,7 +497,6 @@ export default function BottomSheet({
         </div>
       )}
 
-      {/* Alert Modal */}
       {alertStation && (
         <AlertModal
           station={alertStation}

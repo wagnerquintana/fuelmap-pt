@@ -28,7 +28,7 @@ export default function EmailModal({ onSend, onClose }: EmailModalProps) {
   return (
     <div
       className="fixed inset-0 flex items-center justify-center z-[9999] p-4"
-      style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
+      style={{ background: 'var(--backdrop-bg)', backdropFilter: 'var(--backdrop-blur)' }}
     >
       <div
         className="w-full max-w-sm p-6 rounded-2xl relative"
