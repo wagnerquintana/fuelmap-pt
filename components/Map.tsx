@@ -51,7 +51,10 @@ export default function Map({ stations, selectedStation, favorites, fuelType, on
   // Inicialização do mapa
   useEffect(() => {
     if (typeof window === 'undefined') return
-    import('leaflet').then(L => {
+    Promise.all([
+      import('leaflet'),
+      import('leaflet.markercluster'),
+    ]).then(([L]) => {
       if (!containerRef.current) return
       if ((containerRef.current as any)._leaflet_id) return
       // @ts-ignore
@@ -100,9 +103,28 @@ export default function Map({ stations, selectedStation, favorites, fuelType, on
   }, [selectedStation])
 
   function updateMarkers(L: any, map: any, stationList: Station[], fuel: FilterFuelType, favs: Set<string>, selected: Station | null) {
-    if (markersRef.current) markersRef.current.clearLayers()
-    const group = L.layerGroup().addTo(map)
-    markersRef.current = group
+    if (markersRef.current) {
+      map.removeLayer(markersRef.current)
+    }
+
+    // @ts-ignore — markerClusterGroup vem do plugin
+    const cluster = L.markerClusterGroup({
+      maxClusterRadius: 45,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      disableClusteringAtZoom: 14,
+      iconCreateFunction: (clusterObj: any) => {
+        const count = clusterObj.getChildCount()
+        const size = count < 20 ? 'small' : count < 80 ? 'medium' : 'large'
+        return L.divIcon({
+          html: `<div class="fm-cluster fm-cluster-${size}"><span>${count}</span></div>`,
+          className: '',
+          iconSize: [40, 40],
+          iconAnchor: [20, 20],
+        })
+      },
+    })
 
     stationList.forEach(station => {
       if (!station.lat || !station.lng) return
@@ -114,7 +136,6 @@ export default function Map({ stations, selectedStation, favorites, fuelType, on
       const shadow = priceShadow(price, isFav)
       const label = isFav ? '★' : price ? price.toFixed(3) : '?'
 
-      // ── Marcador pill com seta ──
       const icon = L.divIcon({
         html: `
           <div style="position:relative;display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 4px 8px ${shadow})">
@@ -145,7 +166,7 @@ export default function Map({ stations, selectedStation, favorites, fuelType, on
               width:0;height:0;
               border-left:5px solid transparent;
               border-right:5px solid transparent;
-              border-top:5px solid ${isSelected ? color : color};
+              border-top:5px solid ${color};
               margin-top:-1px;
             "></div>
           </div>
@@ -156,7 +177,6 @@ export default function Map({ stations, selectedStation, favorites, fuelType, on
         popupAnchor: [0, -36],
       })
 
-      // ── Popup premium ──
       const headerGradient = isFav
         ? 'linear-gradient(135deg, #b45309, #f59e0b)'
         : priceGradient(price)
@@ -197,14 +217,61 @@ export default function Map({ stations, selectedStation, favorites, fuelType, on
       const marker = L.marker([station.lat, station.lng], { icon })
       marker.bindPopup(popup, { maxWidth: 280, minWidth: 210 })
       marker.on('click', () => onSelectStation(station))
-      group.addLayer(marker)
+      cluster.addLayer(marker)
     })
+
+    map.addLayer(cluster)
+    markersRef.current = cluster
   }
 
   return (
     <>
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossOrigin="" />
       <style>{`
+        /* Cluster icons — brand gradient */
+        .fm-cluster {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          color: white;
+          font-weight: 900;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          border: 2.5px solid rgba(255,255,255,0.9);
+        }
+        .fm-cluster span {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+        }
+        .fm-cluster-small {
+          width: 36px; height: 36px;
+          font-size: 11px;
+          background: linear-gradient(135deg, #3b82f6, #6366f1);
+          box-shadow: 0 4px 14px rgba(99,102,241,0.40);
+        }
+        .fm-cluster-medium {
+          width: 42px; height: 42px;
+          font-size: 12px;
+          background: linear-gradient(135deg, #4f46e5, #7c3aed);
+          box-shadow: 0 6px 18px rgba(124,58,237,0.40);
+        }
+        .fm-cluster-large {
+          width: 48px; height: 48px;
+          font-size: 13px;
+          background: linear-gradient(135deg, #7c3aed, #9333ea);
+          box-shadow: 0 8px 22px rgba(147,51,234,0.40);
+        }
+
+        /* Override default markercluster styles */
+        .marker-cluster-anim .leaflet-marker-icon,
+        .marker-cluster-anim .leaflet-marker-shadow {
+          transition: transform 0.25s ease-out, opacity 0.25s ease-out !important;
+        }
+
         /* Zoom controls */
         .leaflet-control-zoom {
           box-shadow: 0 4px 20px rgba(0,0,0,0.10) !important;
