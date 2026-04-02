@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { ChevronUp, ChevronDown, MapPin, Star, TrendingDown, Fuel, Award, Bell } from 'lucide-react'
 import { Station, StationFilters } from '@/types'
-import { formatPrice, getPriceForFuel, FUEL_LABELS } from '@/lib/utils'
+import { formatPrice, getPriceForFuel, FUEL_LABELS, DISTRICTS } from '@/lib/utils'
 import AlertModal from './AlertModal'
 
 interface BottomSheetProps {
@@ -185,8 +185,25 @@ export default function BottomSheet({
           </div>
           <div className="w-px h-7 bg-gray-100 hidden sm:block" />
           <select
+            value={filters.district}
+            onChange={e => onFiltersChange({ district: e.target.value })}
+            aria-label="Filtrar por distrito"
+            className="text-[11px] font-bold border-0 outline-none rounded-xl px-2.5 py-1.5 max-w-[110px]"
+            style={{
+              background: filters.district ? 'linear-gradient(135deg, #eff6ff, #f5f3ff)' : '#f1f5f9',
+              color: filters.district ? '#4f46e5' : '#475569',
+              border: filters.district ? '1px solid rgba(99,102,241,0.2)' : '1px solid transparent',
+            }}
+          >
+            <option value="">Distrito</option>
+            {DISTRICTS.map(d => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+          <select
             value={filters.sortBy}
             onChange={e => onFiltersChange({ sortBy: e.target.value as StationFilters['sortBy'] })}
+            aria-label="Ordenar postos"
             className="text-[11px] font-bold border-0 outline-none rounded-xl px-2.5 py-1.5"
             style={{ background: '#f1f5f9', color: '#475569' }}
           >
