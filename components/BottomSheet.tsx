@@ -264,10 +264,16 @@ export default function BottomSheet({
                         style={{ borderTop: `1.5px solid ${cfg.badgeBg}` }}
                       >
                         <div className="flex items-baseline gap-0.5">
-                          <span className="text-xl font-black tracking-tight" style={{ color: cfg.badge }}>
-                            {price !== null ? price.toFixed(3) : '—'}
-                          </span>
-                          <span className="text-[9px] font-semibold text-gray-400">€/L</span>
+                          {price !== null ? (
+                            <>
+                              <span className="text-xl font-black tracking-tight" style={{ color: cfg.badge }}>
+                                {price.toFixed(3)}
+                              </span>
+                              <span className="text-[9px] font-semibold text-gray-400">€/L</span>
+                            </>
+                          ) : (
+                            <span className="text-[10px] font-semibold text-gray-300">Sem preço</span>
+                          )}
                         </div>
                         <span
                           onClick={e => { e.stopPropagation(); setAlertStation(station) }}
