@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { X, Mail, Loader2, Sparkles } from 'lucide-react'
+import { useEscapeKey } from '@/lib/useEscapeKey'
 
 interface EmailModalProps {
   onSend: (email: string) => Promise<{ error: any }>
@@ -20,10 +21,12 @@ export default function EmailModal({ onSend, onClose }: EmailModalProps) {
     return () => clearTimeout(t)
   }, [])
 
-  function handleClose() {
+  const handleClose = useCallback(() => {
     setVisible(false)
     setTimeout(onClose, 280)
-  }
+  }, [onClose])
+
+  useEscapeKey(handleClose)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -45,6 +48,9 @@ export default function EmailModal({ onSend, onClose }: EmailModalProps) {
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="email-modal-title"
         className="w-full max-w-sm rounded-3xl overflow-hidden transition-all duration-280"
         style={{
           boxShadow: '0 40px 100px rgba(0,0,0,0.25)',
@@ -72,7 +78,7 @@ export default function EmailModal({ onSend, onClose }: EmailModalProps) {
               >
                 <Mail size={26} className="text-white" />
               </div>
-              <h2 className="text-xl font-black text-white mb-1">Link enviado!</h2>
+              <h2 id="email-modal-title" className="text-xl font-black text-white mb-1">Link enviado!</h2>
               <p className="text-sm text-white/75">
                 Verifica <strong className="text-white">{email}</strong> e clica no link para aceder.
               </p>
@@ -111,7 +117,7 @@ export default function EmailModal({ onSend, onClose }: EmailModalProps) {
                   <Sparkles size={22} className="text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-white leading-tight">Guardar favorito</h2>
+                  <h2 id="email-modal-title" className="text-lg font-black text-white leading-tight">Guardar favorito</h2>
                   <p className="text-xs text-white/70">Link mágico — sem passwords</p>
                 </div>
               </div>

@@ -25,6 +25,8 @@ export default function SearchBar({
 
       {/* Barra principal */}
       <div
+        role="search"
+        aria-label="Pesquisar postos de combustível"
         className="w-full max-w-xl flex items-center gap-3 px-4 py-2.5 rounded-2xl pointer-events-auto"
         style={{
           background: 'rgba(255,255,255,0.90)',
@@ -61,13 +63,14 @@ export default function SearchBar({
           <input
             type="text"
             placeholder="Buscar posto, marca, morada..."
+            aria-label="Pesquisar posto, marca ou morada"
             value={filters.search}
             onChange={e => onFiltersChange({ search: e.target.value })}
             className="w-full pl-5 text-sm bg-transparent outline-none text-gray-800 placeholder-gray-400"
             style={{ fontWeight: 500 }}
           />
           {filters.search && (
-            <button onClick={() => onFiltersChange({ search: '' })} className="absolute right-0 top-1/2 -translate-y-1/2">
+            <button onClick={() => onFiltersChange({ search: '' })} aria-label="Limpar pesquisa" className="absolute right-0 top-1/2 -translate-y-1/2">
               <X size={13} className="text-gray-400 hover:text-gray-600" />
             </button>
           )}
@@ -94,6 +97,8 @@ export default function SearchBar({
             boxShadow: showFavoritesOnly ? '0 2px 8px rgba(217,119,6,0.20)' : 'none',
           }}
           title="Ver favoritos"
+          aria-label={showFavoritesOnly ? 'Mostrar todos os postos' : 'Mostrar apenas favoritos'}
+          aria-pressed={showFavoritesOnly}
         >
           <Star size={14} fill={showFavoritesOnly ? 'currentColor' : 'none'} strokeWidth={2} />
         </button>
@@ -102,6 +107,7 @@ export default function SearchBar({
           href="/calcular"
           className="shrink-0 p-1.5 rounded-xl text-gray-400 hover:text-purple-600 hover:bg-purple-50 press-scale"
           title="Calculadora de poupança"
+          aria-label="Abrir calculadora de poupança"
         >
           <Calculator size={14} strokeWidth={2} />
         </Link>
@@ -111,6 +117,7 @@ export default function SearchBar({
             onClick={onSignOut}
             className="shrink-0 p-1.5 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50"
             title="Sair"
+            aria-label="Terminar sessão"
           >
             <LogOut size={13} strokeWidth={2} />
           </button>
@@ -118,13 +125,14 @@ export default function SearchBar({
       </div>
 
       {/* Pills de combustível — gradient border technique */}
-      <div className="flex gap-2 pointer-events-auto flex-wrap justify-center">
+      <div className="flex gap-2 pointer-events-auto flex-wrap justify-center" role="group" aria-label="Filtrar por tipo de combustível">
         {FUEL_TYPES.map(type => {
           const active = filters.fuelType === type
           return (
             <button
               key={type}
               onClick={() => onFiltersChange({ fuelType: type as FilterFuelType })}
+              aria-pressed={active}
               className="text-[11px] px-3.5 py-1.5 rounded-full font-bold press-scale"
               style={active ? {
                 /* Gradient border trick: padding-box + border-box */

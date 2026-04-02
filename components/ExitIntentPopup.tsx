@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { X, Zap, Loader2, CheckCircle } from 'lucide-react'
+import { useEscapeKey } from '@/lib/useEscapeKey'
 
 interface ExitIntentPopupProps {
   district?: string
@@ -20,10 +21,12 @@ export default function ExitIntentPopup({ district, onClose }: ExitIntentPopupPr
     return () => clearTimeout(t)
   }, [])
 
-  function handleClose() {
+  const handleClose = useCallback(() => {
     setVisible(false)
     setTimeout(onClose, 300)
-  }
+  }, [onClose])
+
+  useEscapeKey(handleClose)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -56,6 +59,9 @@ export default function ExitIntentPopup({ district, onClose }: ExitIntentPopupPr
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="exit-modal-title"
         className="w-full max-w-md rounded-3xl overflow-hidden relative transition-all duration-300"
         style={{
           boxShadow: '0 40px 100px rgba(0,0,0,0.25)',
@@ -78,7 +84,7 @@ export default function ExitIntentPopup({ district, onClose }: ExitIntentPopupPr
                 <X size={14} />
               </button>
               <CheckCircle size={36} className="text-white mx-auto mb-3" />
-              <h2 className="text-xl font-black text-white mb-1">Ótimo, estás dentro!</h2>
+              <h2 id="exit-modal-title" className="text-xl font-black text-white mb-1">Ótimo, estás dentro!</h2>
               <p className="text-sm text-white/75">Vais receber o teu resumo semanal em breve.</p>
             </div>
             <div className="bg-white px-6 py-5">
@@ -113,7 +119,7 @@ export default function ExitIntentPopup({ district, onClose }: ExitIntentPopupPr
               >
                 <Zap size={26} className="text-yellow-300" fill="currentColor" />
               </div>
-              <h2 className="text-xl font-black mb-1">Antes de saíres!</h2>
+              <h2 id="exit-modal-title" className="text-xl font-black mb-1">Antes de saíres!</h2>
               <p className="text-sm opacity-80">
                 Recebe os <strong>3 postos mais baratos</strong>{district ? ` em ${district}` : ' perto de ti'} todas as semanas — de graça.
               </p>

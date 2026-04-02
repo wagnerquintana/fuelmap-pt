@@ -265,7 +265,7 @@ export default function Map({ stations, selectedStation, favorites, fuelType, on
           100% { transform: translateX(-50%) scale(1.8); opacity: 0; }
         }
       `}</style>
-      <div ref={containerRef} className="w-full h-full" />
+      <div ref={containerRef} className="w-full h-full" role="application" aria-label="Mapa de postos de combustível em Portugal" />
     </>
   )
 }

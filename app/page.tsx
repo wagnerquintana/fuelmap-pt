@@ -115,7 +115,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col w-screen h-screen overflow-hidden" style={{ background: 'linear-gradient(160deg, #eef2f7 0%, #e8edf5 100%)' }}>
+    <div id="main-content" className="flex flex-col w-screen h-screen overflow-hidden" style={{ background: 'linear-gradient(160deg, #eef2f7 0%, #e8edf5 100%)' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* Mapa — ocupa 52vh */}
       <div className="relative flex-shrink-0" style={{ height: '52vh' }}>

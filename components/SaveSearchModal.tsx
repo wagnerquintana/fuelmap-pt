@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { X, Bookmark, Loader2, CheckCircle } from 'lucide-react'
+import { useEscapeKey } from '@/lib/useEscapeKey'
 import { FUEL_LABELS } from '@/lib/utils'
 
 interface SaveSearchModalProps {
@@ -22,10 +23,12 @@ export default function SaveSearchModal({ district, fuelType, onClose }: SaveSea
     return () => clearTimeout(t)
   }, [])
 
-  function handleClose() {
+  const handleClose = useCallback(() => {
     setVisible(false)
     setTimeout(onClose, 280)
-  }
+  }, [onClose])
+
+  useEscapeKey(handleClose)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -63,6 +66,9 @@ export default function SaveSearchModal({ district, fuelType, onClose }: SaveSea
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="save-modal-title"
         className="w-full max-w-sm rounded-3xl overflow-hidden relative transition-all duration-280"
         style={{
           boxShadow: '0 40px 100px rgba(0,0,0,0.25)',
@@ -90,7 +96,7 @@ export default function SaveSearchModal({ district, fuelType, onClose }: SaveSea
               >
                 <CheckCircle size={28} className="text-white" />
               </div>
-              <h2 className="text-xl font-black text-white mb-1">Pesquisa guardada!</h2>
+              <h2 id="save-modal-title" className="text-xl font-black text-white mb-1">Pesquisa guardada!</h2>
               <p className="text-sm text-white/75">
                 Vais receber atualizações para{' '}
                 <strong className="text-white">{district || 'Portugal'}</strong>.
@@ -130,7 +136,7 @@ export default function SaveSearchModal({ district, fuelType, onClose }: SaveSea
                   <Bookmark size={22} className="text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-white leading-tight">Guardar pesquisa</h2>
+                  <h2 id="save-modal-title" className="text-lg font-black text-white leading-tight">Guardar pesquisa</h2>
                   <p className="text-xs text-white/70">Recebe alertas quando os preços mudam</p>
                 </div>
               </div>

@@ -72,6 +72,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="h-full overflow-hidden" suppressHydrationWarning>
+        <a href="#main-content" className="skip-to-content">
+          Saltar para conteúdo
+        </a>
         {children}
       </body>
     </html>

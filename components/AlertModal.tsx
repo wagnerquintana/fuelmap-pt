@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { X, Bell, Loader2, CheckCircle } from 'lucide-react'
+import { useEscapeKey } from '@/lib/useEscapeKey'
 import { Station } from '@/types'
 import { FUEL_TYPES, FUEL_LABELS } from '@/lib/utils'
 
@@ -29,10 +30,12 @@ export default function AlertModal({ station, defaultFuelType, onClose }: AlertM
     return () => clearTimeout(t)
   }, [])
 
-  function handleClose() {
+  const handleClose = useCallback(() => {
     setVisible(false)
     setTimeout(onClose, 280)
-  }
+  }, [onClose])
+
+  useEscapeKey(handleClose)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -67,6 +70,9 @@ export default function AlertModal({ station, defaultFuelType, onClose }: AlertM
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="alert-modal-title"
         className="w-full max-w-sm rounded-3xl overflow-hidden transition-all duration-280"
         style={{
           boxShadow: '0 40px 100px rgba(0,0,0,0.25)',
@@ -94,7 +100,7 @@ export default function AlertModal({ station, defaultFuelType, onClose }: AlertM
               >
                 <CheckCircle size={28} className="text-white" />
               </div>
-              <h2 className="text-xl font-black text-white mb-1">Alerta criado!</h2>
+              <h2 id="alert-modal-title" className="text-xl font-black text-white mb-1">Alerta criado!</h2>
               <p className="text-sm text-white/75">
                 Avisamos quando <strong className="text-white">{fuelType}</strong>{' '}
                 baixar de <strong className="text-white">{priceLimit} €/L</strong>.
@@ -134,7 +140,7 @@ export default function AlertModal({ station, defaultFuelType, onClose }: AlertM
                   <Bell size={22} className="text-white" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-lg font-black text-white leading-tight">Alerta de Preço</h2>
+                  <h2 id="alert-modal-title" className="text-lg font-black text-white leading-tight">Alerta de Preço</h2>
                   <p className="text-xs text-white/70 truncate">{station.name}</p>
                 </div>
               </div>
