@@ -122,6 +122,10 @@ export default function BottomSheet({
                   melhor preço
                 </span>
               </>
+            ) : stations.length > 0 ? (
+              <span className="text-sm font-semibold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-xl">
+                {FUEL_LABELS[filters.fuelType] || filters.fuelType} não disponível neste posto de combustível.
+              </span>
             ) : (
               <span className="text-2xl font-black text-gray-300">—</span>
             )}
@@ -176,7 +180,7 @@ export default function BottomSheet({
                 <Fuel size={24} className="text-gray-300" />
               </div>
               <p className="text-sm font-bold text-gray-600 mb-1">
-                {FUEL_LABELS[filters.fuelType] || filters.fuelType} não disponível nesta área
+                {FUEL_LABELS[filters.fuelType] || filters.fuelType} não disponível neste posto de combustível.
               </p>
               <p className="text-xs text-gray-400 mb-4">
                 Nenhum posto encontrado vende este combustível aqui.
