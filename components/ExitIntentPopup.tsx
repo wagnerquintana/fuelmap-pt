@@ -16,7 +16,6 @@ export default function ExitIntentPopup({ district, onClose }: ExitIntentPopupPr
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    // Animar entrada
     const t = setTimeout(() => setVisible(true), 50)
     return () => clearTimeout(t)
   }, [])
@@ -64,46 +63,74 @@ export default function ExitIntentPopup({ district, onClose }: ExitIntentPopupPr
           opacity: visible ? 1 : 0,
         }}
       >
-        {/* Header colorido */}
-        <div
-          className="px-6 pt-6 pb-5 text-white text-center"
-          style={{ background: 'linear-gradient(135deg, #1d4ed8, #7c3aed)' }}
-        >
-          <button
-            onClick={handleClose}
-            className="absolute top-4 right-4 p-1.5 rounded-full"
-            style={{ background: 'rgba(255,255,255,0.15)', color: 'white' }}
-          >
-            <X size={14} />
-          </button>
-          <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
-            style={{ background: 'rgba(255,255,255,0.15)' }}
-          >
-            <Zap size={26} className="text-yellow-300" fill="currentColor" />
-          </div>
-          <h2 className="text-xl font-black mb-1">Antes de saíres!</h2>
-          <p className="text-sm opacity-80">
-            Recebe os <strong>3 postos mais baratos</strong>{district ? ` em ${district}` : ' perto de ti'} todas as semanas — de graça.
-          </p>
-        </div>
-
-        {/* Body */}
-        <div className="bg-white px-6 py-5">
-          {done ? (
-            <div className="text-center py-2">
-              <CheckCircle size={36} className="text-green-500 mx-auto mb-3" />
-              <p className="font-bold text-gray-900 mb-1">Ótimo, estás dentro!</p>
-              <p className="text-sm text-gray-500 mb-4">Vais receber o teu resumo semanal em breve.</p>
-              <button onClick={handleClose} className="w-full py-2.5 rounded-xl bg-gray-900 text-white font-bold text-sm">
+        {done ? (
+          /* ── Sucesso ── */
+          <>
+            <div
+              className="px-6 pt-6 pb-5 text-center relative"
+              style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}
+            >
+              <button
+                onClick={handleClose}
+                className="absolute top-4 right-4 p-1.5 rounded-full"
+                style={{ background: 'rgba(255,255,255,0.15)', color: 'white' }}
+              >
+                <X size={14} />
+              </button>
+              <CheckCircle size={36} className="text-white mx-auto mb-3" />
+              <h2 className="text-xl font-black text-white mb-1">Ótimo, estás dentro!</h2>
+              <p className="text-sm text-white/75">Vais receber o teu resumo semanal em breve.</p>
+            </div>
+            <div className="bg-white px-6 py-5">
+              <button
+                onClick={handleClose}
+                className="w-full py-3 rounded-xl font-bold text-sm text-white transition hover:opacity-90 relative overflow-hidden"
+                style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}
+              >
+                <span className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(115deg, rgba(255,255,255,0.15) 0%, transparent 55%)' }} />
                 Fechar
               </button>
             </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-blue-50">
+          </>
+        ) : (
+          /* ── Formulário ── */
+          <>
+            {/* Header gradient */}
+            <div
+              className="px-6 pt-6 pb-5 text-white text-center relative"
+              style={{ background: 'linear-gradient(135deg, #1d4ed8, #7c3aed)' }}
+            >
+              <button
+                onClick={handleClose}
+                className="absolute top-4 right-4 p-1.5 rounded-full"
+                style={{ background: 'rgba(255,255,255,0.15)', color: 'white' }}
+              >
+                <X size={14} />
+              </button>
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
+                style={{ background: 'rgba(255,255,255,0.15)' }}
+              >
+                <Zap size={26} className="text-yellow-300" fill="currentColor" />
+              </div>
+              <h2 className="text-xl font-black mb-1">Antes de saíres!</h2>
+              <p className="text-sm opacity-80">
+                Recebe os <strong>3 postos mais baratos</strong>{district ? ` em ${district}` : ' perto de ti'} todas as semanas — de graça.
+              </p>
+            </div>
+
+            {/* Body */}
+            <div className="bg-white px-6 py-5">
+              {/* Benefícios */}
+              <div className="flex items-center gap-2 mb-4 p-3 rounded-xl" style={{ background: 'var(--surface3)' }}>
                 {['⛽ Preços em tempo real', '📍 Por distrito', '🔔 Sem spam'].map(item => (
-                  <span key={item} className="text-[10px] font-semibold text-blue-700 whitespace-nowrap">{item}</span>
+                  <span
+                    key={item}
+                    className="text-[10px] font-bold whitespace-nowrap"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    {item}
+                  </span>
                 ))}
               </div>
 
@@ -115,28 +142,37 @@ export default function ExitIntentPopup({ district, onClose }: ExitIntentPopupPr
                   onChange={e => setEmail(e.target.value)}
                   required
                   autoFocus
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500"
+                  className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
+                  style={{
+                    background: 'var(--surface2)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text)',
+                  }}
+                  onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+                  onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
                 />
-                {error && <p className="text-xs text-red-500">{error}</p>}
+                {error && <p className="text-xs" style={{ color: 'var(--red)' }}>{error}</p>}
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl text-white font-black text-sm flex items-center justify-center gap-2 transition hover:opacity-90 disabled:opacity-50"
+                  className="w-full py-3.5 rounded-xl text-white font-black text-sm flex items-center justify-center gap-2 transition hover:opacity-90 disabled:opacity-50 relative overflow-hidden press-scale"
                   style={{ background: 'linear-gradient(135deg, #1d4ed8, #7c3aed)' }}
                 >
+                  <span className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(115deg, rgba(255,255,255,0.15) 0%, transparent 55%)' }} />
                   {loading && <Loader2 size={14} className="animate-spin" />}
                   Quero receber os melhores preços
                 </button>
               </form>
               <button
                 onClick={handleClose}
-                className="w-full mt-2 text-xs text-gray-400 hover:text-gray-600 py-1"
+                className="w-full mt-2 text-xs py-1"
+                style={{ color: 'var(--text-dim)' }}
               >
                 Não, obrigado
               </button>
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

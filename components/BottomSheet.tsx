@@ -136,7 +136,7 @@ export default function BottomSheet({
           <p className="label-xs">{FUEL_LABELS[filters.fuelType] || filters.fuelType}</p>
           <div className="flex items-baseline gap-2 mt-0.5 flex-wrap">
             {loading ? (
-              <div className="h-7 w-28 bg-gray-100 rounded-lg animate-pulse" />
+              <div className="h-7 w-28 skeleton" />
             ) : cheapestPrice !== null ? (
               <>
                 <span
@@ -171,19 +171,19 @@ export default function BottomSheet({
         {/* Stats + controlos */}
         <div className="flex items-center gap-2 shrink-0">
           {avgPrice !== null && (
-            <div className="text-right">
+            <div className="text-right hidden xs:block">
               <p className="label-xs">Média</p>
               <p className="text-xs font-black" style={{ color: '#334155' }}>
                 {avgPrice.toFixed(3)}<span className="text-[9px] font-medium text-gray-400 ml-0.5">€/L</span>
               </p>
             </div>
           )}
-          <div className="w-px h-7 bg-gray-100" />
-          <div className="text-right">
+          <div className="w-px h-7 bg-gray-100 hidden xs:block" />
+          <div className="text-right hidden sm:block">
             <p className="label-xs">Postos</p>
             <p className="text-xs font-black" style={{ color: '#334155' }}>{stations.length}</p>
           </div>
-          <div className="w-px h-7 bg-gray-100" />
+          <div className="w-px h-7 bg-gray-100 hidden sm:block" />
           <select
             value={filters.sortBy}
             onChange={e => onFiltersChange({ sortBy: e.target.value as StationFilters['sortBy'] })}
@@ -218,12 +218,17 @@ export default function BottomSheet({
           {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="rounded-[18px] overflow-hidden animate-pulse">
-                  <div className="h-10 bg-gray-200" />
-                  <div className="bg-gray-100 px-3 py-2.5 space-y-2">
-                    <div className="h-3 bg-gray-200 rounded w-3/4" />
-                    <div className="h-2 bg-gray-200 rounded w-1/2" />
-                    <div className="h-6 bg-gray-200 rounded w-1/3 mt-3" />
+                <div
+                  key={i}
+                  className="rounded-[18px] overflow-hidden animate-slide-up"
+                  style={{ animationDelay: `${i * 45}ms` }}
+                >
+                  <div className="h-10 skeleton" style={{ borderRadius: 0 }} />
+                  <div className="px-3 py-3 space-y-2" style={{ background: 'var(--surface2)' }}>
+                    <div className="h-3 skeleton w-4/5" />
+                    <div className="h-2 skeleton w-1/2" />
+                    <div className="h-2 skeleton w-2/3" />
+                    <div className="h-7 skeleton w-2/5 mt-3" />
                   </div>
                 </div>
               ))}
@@ -293,7 +298,7 @@ export default function BottomSheet({
                   <div
                     key={station.id}
                     onClick={() => onSelectStation(station)}
-                    className="animate-slide-up cursor-pointer rounded-[18px] overflow-hidden"
+                    className="animate-slide-up cursor-pointer rounded-[18px] overflow-hidden press-scale"
                     style={{
                       animationDelay: `${i * 45}ms`,
                       boxShadow: isSelected
@@ -414,14 +419,14 @@ export default function BottomSheet({
               <div
                 key={station.id}
                 onClick={() => onSelectStation(station)}
-                className="flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors relative"
+                className="flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-all duration-150 relative"
                 style={{
-                  background: isSelected ? '#f0f7ff' : 'transparent',
-                  borderBottom: '1px solid #f8fafc',
-                  borderLeft: isSelected ? `3px solid #3b82f6` : '3px solid transparent',
+                  background: isSelected ? 'var(--surface3)' : 'transparent',
+                  borderBottom: '1px solid var(--surface2)',
+                  borderLeft: isSelected ? '3px solid var(--color-primary)' : '3px solid transparent',
                 }}
-                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#f9fafb' }}
-                onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
+                onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = 'var(--surface2)'; e.currentTarget.style.borderLeftColor = 'var(--border-hover)' } }}
+                onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderLeftColor = 'transparent' } }}
               >
                 {/* Rank + preço */}
                 <div

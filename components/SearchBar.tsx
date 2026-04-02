@@ -87,7 +87,7 @@ export default function SearchBar({
         {/* Favoritos */}
         <button
           onClick={onToggleFavorites}
-          className="shrink-0 p-1.5 rounded-xl"
+          className="shrink-0 p-1.5 rounded-xl press-scale"
           style={{
             background: showFavoritesOnly ? '#fef3c7' : 'transparent',
             color: showFavoritesOnly ? '#d97706' : '#9ca3af',
@@ -100,7 +100,7 @@ export default function SearchBar({
 
         <Link
           href="/calcular"
-          className="shrink-0 p-1.5 rounded-xl text-gray-400 hover:text-purple-600 hover:bg-purple-50"
+          className="shrink-0 p-1.5 rounded-xl text-gray-400 hover:text-purple-600 hover:bg-purple-50 press-scale"
           title="Calculadora de poupança"
         >
           <Calculator size={14} strokeWidth={2} />
@@ -125,7 +125,7 @@ export default function SearchBar({
             <button
               key={type}
               onClick={() => onFiltersChange({ fuelType: type as FilterFuelType })}
-              className="text-[11px] px-3.5 py-1.5 rounded-full font-bold"
+              className="text-[11px] px-3.5 py-1.5 rounded-full font-bold press-scale"
               style={active ? {
                 /* Gradient border trick: padding-box + border-box */
                 background: 'linear-gradient(rgba(241,245,255,0.95), rgba(241,245,255,0.95)) padding-box, linear-gradient(135deg, #3b82f6, #8b5cf6) border-box',
