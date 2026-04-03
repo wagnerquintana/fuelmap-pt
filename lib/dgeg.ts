@@ -71,7 +71,7 @@ export async function fetchAllStations(): Promise<Station[]> {
           name: r.Nome || '',
           brand: r.Marca || null,
           address: r.Morada || null,
-          locality: r.Localidade || null,
+          locality: normalizeLocality(r.Localidade),
           municipality: r.Municipio || null,
           district: r.Distrito || null,
           lat: r.Latitude || null,
@@ -87,6 +87,24 @@ export async function fetchAllStations(): Promise<Station[]> {
   } while (map.size < total && total > 0)
 
   return Array.from(map.values())
+}
+
+function titleCase(s: string): string {
+  return s.replace(/\w\S*/g, w =>
+    w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+  ).replace(/\b(De|Do|Da|Dos|Das|E|Em|No|Na|Nos|Nas|Ao|À|O|A)\b/g, m => m.toLowerCase())
+   .replace(/^./, c => c.toUpperCase())
+}
+
+function normalizeLocality(raw: string | null): string | null {
+  if (!raw) return null
+  const trimmed = raw.trim()
+  if (!trimmed) return null
+  // If ALL CAPS, convert to Title Case
+  if (trimmed === trimmed.toUpperCase() && trimmed.length > 2) {
+    return titleCase(trimmed)
+  }
+  return trimmed
 }
 
 function parsePrice(preco: string): number | null {
