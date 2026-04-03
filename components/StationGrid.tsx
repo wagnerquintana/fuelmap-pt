@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { MapPin, Star, Fuel, Bell, ArrowUp, Search, SearchX, TrendingDown, X, Zap } from 'lucide-react'
+import { MapPin, Star, Fuel, Bell, ArrowUp, Search, SearchX, X, Zap } from 'lucide-react'
 import { Station, StationFilters } from '@/types'
 import { formatPrice, getPriceForFuel, FUEL_LABELS, DISTRICTS } from '@/lib/utils'
 import StationDetail from '@/components/StationDetail'
@@ -27,14 +27,6 @@ const RANK_CONFIG = [
   { label: '3.o Lugar', gradient: 'linear-gradient(135deg, #b45309, #f59e0b)', glow: 'rgba(245,158,11,0.22)', badge: '#f59e0b', badgeBg: 'rgba(245,158,11,0.10)', medal: '\uD83E\uDD49' },
 ]
 
-const POPULAR_DISTRICTS = [
-  { name: 'Lisboa', color: '#818cf8', glow: 'rgba(129,140,248,0.25)' },
-  { name: 'Porto', color: '#f472b6', glow: 'rgba(244,114,182,0.25)' },
-  { name: 'Faro', color: '#fbbf24', glow: 'rgba(251,191,36,0.25)' },
-  { name: 'Braga', color: '#34d399', glow: 'rgba(52,211,153,0.25)' },
-  { name: 'Setúbal', color: '#fb923c', glow: 'rgba(251,146,60,0.25)' },
-  { name: 'Coimbra', color: '#38bdf8', glow: 'rgba(56,189,248,0.25)' },
-]
 
 function getPriceColor(price: number | null) {
   if (price === null) return '#475569'
@@ -146,42 +138,73 @@ export default function StationGrid({
       {/* Scrollable content */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain px-4 sm:px-6 lg:px-8 pb-8 pt-3">
         <div className="max-w-7xl mx-auto">
-          {loading ? (
-            <SkeletonGrid viewMode={viewMode} />
-          ) : sorted.length === 0 && hasSearched ? (
-            <EmptyState filters={filters} onFiltersChange={onFiltersChange} />
-          ) : viewMode === 'cards' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-              {sorted.map((station, i) => (
-                <StationCard
-                  key={station.id}
-                  station={station}
-                  index={i}
-                  fuelType={filters.fuelType}
-                  isFavorite={favorites.has(station.id)}
-                  cheapestPrice={cheapestPrice}
-                  onSelect={() => onSelectStation(station)}
-                  onToggleFavorite={() => onToggleFavorite(station.id)}
-                  onAlert={() => setAlertStation(station)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-1.5">
-              {sorted.map((station, i) => (
-                <StationRow
-                  key={station.id}
-                  station={station}
-                  index={i}
-                  fuelType={filters.fuelType}
-                  isFavorite={favorites.has(station.id)}
-                  onSelect={() => onSelectStation(station)}
-                  onToggleFavorite={() => onToggleFavorite(station.id)}
-                  onAlert={() => setAlertStation(station)}
-                />
-              ))}
-            </div>
-          )}
+          {(() => {
+            if (loading) return <SkeletonGrid viewMode={viewMode} />
+            if (sorted.length === 0 && hasSearched) return <EmptyState filters={filters} onFiltersChange={onFiltersChange} />
+
+            const localStations = sorted.filter(s => !(s as any)._nearby)
+            const nearbyStations = sorted.filter(s => (s as any)._nearby)
+            const hasNearby = nearbyStations.length > 0
+
+            const renderCards = (list: Station[], startIndex: number, isNearby: boolean) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                {list.map((station, i) => (
+                  <StationCard
+                    key={station.id}
+                    station={station}
+                    index={startIndex + i}
+                    fuelType={filters.fuelType}
+                    isFavorite={favorites.has(station.id)}
+                    cheapestPrice={cheapestPrice}
+                    isNearby={isNearby}
+                    onSelect={() => onSelectStation(station)}
+                    onToggleFavorite={() => onToggleFavorite(station.id)}
+                    onAlert={() => setAlertStation(station)}
+                  />
+                ))}
+              </div>
+            )
+
+            const renderRows = (list: Station[], startIndex: number, isNearby: boolean) => (
+              <div className="flex flex-col gap-1.5">
+                {list.map((station, i) => (
+                  <StationRow
+                    key={station.id}
+                    station={station}
+                    index={startIndex + i}
+                    fuelType={filters.fuelType}
+                    isFavorite={favorites.has(station.id)}
+                    isNearby={isNearby}
+                    onSelect={() => onSelectStation(station)}
+                    onToggleFavorite={() => onToggleFavorite(station.id)}
+                    onAlert={() => setAlertStation(station)}
+                  />
+                ))}
+              </div>
+            )
+
+            const nearbySeparator = (
+              <div className="flex items-center gap-4 my-6">
+                <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.3))' }} />
+                <span className="text-xs font-bold uppercase tracking-[0.12em] px-4 py-1.5 rounded-full" style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.15)' }}>
+                  📍 Postos próximos
+                </span>
+                <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, rgba(251,191,36,0.3), transparent)' }} />
+              </div>
+            )
+
+            return viewMode === 'cards' ? (
+              <>
+                {renderCards(localStations, 0, false)}
+                {hasNearby && <>{nearbySeparator}{renderCards(nearbyStations, localStations.length, true)}</>}
+              </>
+            ) : (
+              <>
+                {renderRows(localStations, 0, false)}
+                {hasNearby && <>{nearbySeparator}{renderRows(nearbyStations, localStations.length, true)}</>}
+              </>
+            )
+          })()}
         </div>
       </div>
 
@@ -225,62 +248,140 @@ export default function StationGrid({
    Welcome / Home Screen
    ════════════════════════════════════════════════ */
 
+const WIZARD_FUELS = [
+  { type: 'Gasolina simples 95', label: 'Gasolina 95', icon: '⛽', color: '#818cf8', glow: 'rgba(129,140,248,0.25)' },
+  { type: 'Gasolina especial 95', label: 'Gasolina 95+', icon: '⛽', color: '#a78bfa', glow: 'rgba(167,139,250,0.25)' },
+  { type: 'Gasolina especial 98', label: 'Gasolina 98', icon: '🏎️', color: '#c084fc', glow: 'rgba(192,132,252,0.25)' },
+  { type: 'Gasóleo simples', label: 'Gasóleo', icon: '🚗', color: '#34d399', glow: 'rgba(52,211,153,0.25)' },
+  { type: 'Gasóleo especial', label: 'Gasóleo+', icon: '🚙', color: '#2dd4bf', glow: 'rgba(45,212,191,0.25)' },
+  { type: 'GPL Auto', label: 'GPL Auto', icon: '🌿', color: '#fbbf24', glow: 'rgba(251,191,36,0.25)' },
+]
+
+const ALL_DISTRICTS = [
+  { name: 'Aveiro', color: '#818cf8' }, { name: 'Beja', color: '#fb923c' },
+  { name: 'Braga', color: '#34d399' }, { name: 'Bragança', color: '#f472b6' },
+  { name: 'Castelo Branco', color: '#a78bfa' }, { name: 'Coimbra', color: '#38bdf8' },
+  { name: 'Évora', color: '#fbbf24' }, { name: 'Faro', color: '#fbbf24' },
+  { name: 'Guarda', color: '#fb923c' }, { name: 'Leiria', color: '#818cf8' },
+  { name: 'Lisboa', color: '#818cf8' }, { name: 'Portalegre', color: '#f472b6' },
+  { name: 'Porto', color: '#f472b6' }, { name: 'Santarém', color: '#34d399' },
+  { name: 'Setúbal', color: '#fb923c' }, { name: 'Viana do Castelo', color: '#38bdf8' },
+  { name: 'Vila Real', color: '#a78bfa' }, { name: 'Viseu', color: '#2dd4bf' },
+  { name: 'Região Autónoma dos Açores', color: '#38bdf8' },
+  { name: 'Região Autónoma da Madeira', color: '#fbbf24' },
+]
+
 function WelcomeScreen({ onFiltersChange }: { onFiltersChange: (f: Partial<StationFilters>) => void }) {
-  const [heroSearch, setHeroSearch] = useState('')
-  const heroDebounce = useRef<ReturnType<typeof setTimeout>>(null)
+  const [step, setStep] = useState(1)
+  const [selectedFuel, setSelectedFuel] = useState('')
+  const [selectedDistrict, setSelectedDistrict] = useState('')
+  const [selectedMunicipality, setSelectedMunicipality] = useState('')
+  const [selectedLocality, setSelectedLocality] = useState('')
+  const [municipalities, setMunicipalities] = useState<string[]>([])
+  const [localities, setLocalities] = useState<string[]>([])
+  const [loadingMunicipalities, setLoadingMunicipalities] = useState(false)
+  const [loadingLocalities, setLoadingLocalities] = useState(false)
+  const [municipalitySearch, setMunicipalitySearch] = useState('')
+  const [localitySearch, setLocalitySearch] = useState('')
 
-  function handleHeroSearch(value: string) {
-    setHeroSearch(value)
-    if (heroDebounce.current) clearTimeout(heroDebounce.current)
-    heroDebounce.current = setTimeout(() => {
-      if (value.trim()) onFiltersChange({ search: value })
-    }, 500)
+  function handleFuelSelect(fuelType: string) {
+    setSelectedFuel(fuelType)
+    setStep(2)
   }
 
-  function handleHeroSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (heroDebounce.current) clearTimeout(heroDebounce.current)
-    if (heroSearch.trim()) onFiltersChange({ search: heroSearch })
+  async function handleDistrictSelect(district: string) {
+    setSelectedDistrict(district)
+    setLoadingMunicipalities(true)
+    setStep(3)
+    try {
+      const res = await fetch(`/api/municipalities?district=${encodeURIComponent(district)}`)
+      if (res.ok) setMunicipalities(await res.json())
+    } catch { /* ignore */ }
+    setLoadingMunicipalities(false)
   }
+
+  async function handleMunicipalitySelect(municipality: string) {
+    setSelectedMunicipality(municipality)
+    setLoadingLocalities(true)
+    setStep(4)
+    try {
+      const res = await fetch(`/api/localities?district=${encodeURIComponent(selectedDistrict)}&municipality=${encodeURIComponent(municipality)}`)
+      if (res.ok) setLocalities(await res.json())
+    } catch { /* ignore */ }
+    setLoadingLocalities(false)
+  }
+
+  function handleLocalitySelect(locality: string) {
+    setSelectedLocality(locality)
+  }
+
+  function handleConsultar() {
+    onFiltersChange({
+      fuelType: selectedFuel as any,
+      district: selectedDistrict,
+      municipality: selectedMunicipality,
+      locality: selectedLocality,
+    })
+  }
+
+  function handleBack() {
+    if (step === 4) {
+      setSelectedMunicipality('')
+      setSelectedLocality('')
+      setLocalities([])
+      setLocalitySearch('')
+      setStep(3)
+    } else if (step === 3) {
+      setSelectedDistrict('')
+      setSelectedMunicipality('')
+      setMunicipalities([])
+      setMunicipalitySearch('')
+      setStep(2)
+    } else if (step === 2) {
+      setSelectedFuel('')
+      setStep(1)
+    }
+  }
+
+  const filteredMunicipalities = municipalitySearch
+    ? municipalities.filter(m => m.toLowerCase().includes(municipalitySearch.toLowerCase()))
+    : municipalities
+
+  const filteredLocalities = localitySearch
+    ? localities.filter(l => l.toLowerCase().includes(localitySearch.toLowerCase()))
+    : localities
+
   return (
     <div className="h-full overflow-y-auto overscroll-contain relative">
-      {/* Ambient orbs — layered glow */}
+      {/* Ambient orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-        {/* Top-center indigo */}
         <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[700px] h-[500px]" style={{
           background: 'radial-gradient(ellipse at center, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.08) 35%, transparent 65%)',
           filter: 'blur(60px)',
         }} />
-        {/* Left purple */}
         <div className="absolute top-[30%] -left-40 w-[500px] h-[500px]" style={{
           background: 'radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 60%)',
           filter: 'blur(50px)',
         }} />
-        {/* Right blue */}
         <div className="absolute top-[50%] -right-32 w-[400px] h-[400px]" style={{
           background: 'radial-gradient(circle, rgba(59,130,246,0.07) 0%, transparent 60%)',
           filter: 'blur(50px)',
-        }} />
-        {/* Bottom green hint */}
-        <div className="absolute bottom-0 left-1/3 w-[500px] h-[300px]" style={{
-          background: 'radial-gradient(ellipse, rgba(52,211,153,0.05) 0%, transparent 60%)',
-          filter: 'blur(60px)',
         }} />
       </div>
 
       <div className="max-w-3xl mx-auto px-5 sm:px-8 relative">
 
-        {/* ── HERO ── */}
-        <div className="pt-16 sm:pt-28 pb-12 sm:pb-16">
+        {/* ── HEADER ── */}
+        <div className="pt-12 sm:pt-20 pb-6 sm:pb-10">
           {/* Live status */}
-          <div className="flex justify-center mb-8 animate-slide-up">
+          <div className="flex justify-center mb-6 animate-slide-up">
             <span
               className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-xs font-semibold"
               style={{
                 background: 'rgba(52,211,153,0.06)',
                 color: 'var(--green)',
                 border: '1px solid rgba(52,211,153,0.15)',
-                boxShadow: '0 0 24px rgba(52,211,153,0.1), 0 0 0 1px rgba(52,211,153,0.05) inset',
+                boxShadow: '0 0 24px rgba(52,211,153,0.1)',
               }}
             >
               <span className="relative flex h-2.5 w-2.5">
@@ -293,137 +394,370 @@ function WelcomeScreen({ onFiltersChange }: { onFiltersChange: (f: Partial<Stati
 
           {/* Headline */}
           <h1 className="text-center animate-slide-up" style={{ animationDelay: '60ms' }}>
-            <span className="block text-4xl sm:text-7xl font-black tracking-tight leading-[1.05]" style={{ color: 'white' }}>
+            <span className="block text-3xl sm:text-5xl font-black tracking-tight leading-[1.1]" style={{ color: 'white' }}>
               Combustível
             </span>
-            <span className="block text-4xl sm:text-7xl font-black tracking-tight leading-[1.05] mt-1 sm:mt-2" style={{
-              background: 'linear-gradient(135deg, #818cf8 0%, #a78bfa 25%, #c084fc 50%, #f0abfc 75%, #818cf8 100%)',
-              backgroundSize: '200% auto',
+            <span className="block text-3xl sm:text-5xl font-black tracking-tight leading-[1.1] mt-1" style={{
+              background: 'linear-gradient(135deg, #818cf8, #a78bfa, #c084fc)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               filter: 'drop-shadow(0 0 40px rgba(129,140,248,0.4))',
             }}>
               mais barato
             </span>
-            <span className="block text-4xl sm:text-7xl font-black tracking-tight leading-[1.05] mt-1 sm:mt-2" style={{ color: 'white' }}>
-              perto de si
-            </span>
           </h1>
+        </div>
 
-          <p className="text-center text-base sm:text-lg mt-5 max-w-md mx-auto leading-relaxed animate-slide-up" style={{ color: 'white', animationDelay: '100ms' }}>
-            Preços atualizados diariamente da DGEG.
-          </p>
-
-          {/* ── HERO SEARCH — full width ── */}
-          <form onSubmit={handleHeroSubmit} className="mt-10 animate-slide-up" style={{ animationDelay: '140ms' }}>
-            <div
-              className="flex items-center gap-4 px-6 py-5 rounded-2xl transition-all"
-              style={{
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid ' + (heroSearch ? 'rgba(129,140,248,0.5)' : 'rgba(255,255,255,0.1)'),
-                boxShadow: heroSearch
-                  ? '0 0 40px rgba(99,102,241,0.2), 0 12px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(129,140,248,0.15) inset'
-                  : '0 12px 40px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.04) inset',
-              }}
-            >
-              <Search size={22} style={{ color: heroSearch ? '#818cf8' : 'rgba(255,255,255,0.3)' }} className="shrink-0" />
-              <input
-                type="text"
-                placeholder="Pesquisar por localidade, marca ou posto..."
-                value={heroSearch}
-                onChange={e => handleHeroSearch(e.target.value)}
-                className="flex-1 text-lg bg-transparent outline-none min-w-0 focus:ring-0 focus:outline-none"
-                style={{ color: 'white', fontWeight: 500, border: 'none', boxShadow: 'none' }}
-                autoFocus
-              />
-              {heroSearch && (
-                <button
-                  type="button"
-                  onClick={() => setHeroSearch('')}
-                  className="p-1.5 rounded-lg transition-colors hover:bg-white/10 mr-1"
-                  style={{ color: 'rgba(255,255,255,0.4)' }}
-                >
-                  <X size={18} />
-                </button>
+        {/* ── STEP INDICATORS ── */}
+        <div className="flex items-center justify-center gap-2 mb-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
+          {[1, 2, 3, 4].map(s => (
+            <div key={s} className="flex items-center gap-1.5 sm:gap-2">
+              <div
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[11px] sm:text-xs font-bold transition-all"
+                style={{
+                  background: step >= s
+                    ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+                    : 'rgba(255,255,255,0.06)',
+                  color: step >= s ? 'white' : 'rgba(255,255,255,0.3)',
+                  boxShadow: step >= s ? '0 0 16px rgba(99,102,241,0.4)' : 'none',
+                  border: step >= s ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                }}
+              >
+                {s}
+              </div>
+              {s < 4 && (
+                <div className="w-6 sm:w-12 h-[2px] rounded" style={{
+                  background: step > s
+                    ? 'linear-gradient(90deg, #6366f1, #8b5cf6)'
+                    : 'rgba(255,255,255,0.08)',
+                }} />
               )}
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white shrink-0 transition-all"
-                style={{
-                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa)',
-                  boxShadow: '0 0 20px rgba(99,102,241,0.3), 0 4px 12px rgba(0,0,0,0.3)',
-                  border: '1px solid rgba(139,92,246,0.3)',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.boxShadow = '0 0 32px rgba(99,102,241,0.5), 0 6px 20px rgba(0,0,0,0.3)'
-                  e.currentTarget.style.transform = 'translateY(-1px)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.boxShadow = '0 0 20px rgba(99,102,241,0.3), 0 4px 12px rgba(0,0,0,0.3)'
-                  e.currentTarget.style.transform = 'none'
-                }}
-              >
-                <Search size={15} />
-                Buscar
-              </button>
             </div>
-          </form>
+          ))}
         </div>
 
-        {/* ── DISTRICTS ── */}
-        <div className="pb-14 sm:pb-20 animate-slide-up" style={{ animationDelay: '180ms' }}>
-          <div className="flex flex-wrap gap-3 justify-center">
-            {POPULAR_DISTRICTS.map(d => (
-              <button
-                key={d.name}
-                onClick={() => onFiltersChange({ district: d.name })}
-                className="group inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl text-sm font-semibold transition-all"
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${d.color}30`,
-                  color: 'rgba(255,255,255,0.8)',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = `${d.color}70`
-                  e.currentTarget.style.background = `${d.color}10`
-                  e.currentTarget.style.color = d.color
-                  e.currentTarget.style.boxShadow = `0 0 28px ${d.glow}, 0 8px 24px rgba(0,0,0,0.3)`
-                  e.currentTarget.style.transform = 'translateY(-3px)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = `${d.color}30`
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
-                  e.currentTarget.style.color = 'rgba(255,255,255,0.8)'
-                  e.currentTarget.style.boxShadow = 'none'
-                  e.currentTarget.style.transform = 'none'
-                }}
-              >
-                <MapPin size={14} style={{ color: d.color }} />
-                {d.name}
-              </button>
-            ))}
-            <button
-              onClick={() => { document.querySelector<HTMLSelectElement>('select')?.focus() }}
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold transition-all"
-              style={{ border: '1px dashed rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.45)' }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'
-                e.currentTarget.style.color = 'rgba(255,255,255,0.7)'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'
-                e.currentTarget.style.color = 'rgba(255,255,255,0.45)'
-              }}
-            >
-              + Ver todos
-            </button>
+        {/* ── BACK BUTTON ── */}
+        {step > 1 && (
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-2 mb-6 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+            style={{ color: 'rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            ← Voltar
+          </button>
+        )}
+
+        {/* ── STEP 1: FUEL TYPE ── */}
+        {step === 1 && (
+          <div className="animate-slide-up">
+            <h2 className="text-center text-xl sm:text-2xl font-bold mb-2" style={{ color: 'white' }}>
+              Escolha o Combustível do seu Veículo
+            </h2>
+            <p className="text-center text-sm mb-8" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              Selecione o tipo de combustível que utiliza
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+              {WIZARD_FUELS.map(fuel => (
+                <button
+                  key={fuel.type}
+                  onClick={() => handleFuelSelect(fuel.type)}
+                  className="flex flex-col items-center gap-3 px-4 py-6 sm:py-8 rounded-2xl transition-all group"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${fuel.color}30`,
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.borderColor = `${fuel.color}70`
+                    e.currentTarget.style.background = `${fuel.color}12`
+                    e.currentTarget.style.boxShadow = `0 0 32px ${fuel.glow}, 0 8px 24px rgba(0,0,0,0.3)`
+                    e.currentTarget.style.transform = 'translateY(-4px)'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = `${fuel.color}30`
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
+                    e.currentTarget.style.boxShadow = 'none'
+                    e.currentTarget.style.transform = 'none'
+                  }}
+                >
+                  <span className="text-3xl sm:text-4xl">{fuel.icon}</span>
+                  <span className="text-sm sm:text-base font-bold" style={{ color: fuel.color }}>{fuel.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* ── STEP 2: DISTRICT ── */}
+        {step === 2 && (
+          <div className="animate-slide-up">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <span className="text-sm font-semibold px-3 py-1 rounded-full" style={{
+                background: `${WIZARD_FUELS.find(f => f.type === selectedFuel)?.color}15`,
+                color: WIZARD_FUELS.find(f => f.type === selectedFuel)?.color,
+                border: `1px solid ${WIZARD_FUELS.find(f => f.type === selectedFuel)?.color}30`,
+              }}>
+                {WIZARD_FUELS.find(f => f.type === selectedFuel)?.icon} {WIZARD_FUELS.find(f => f.type === selectedFuel)?.label}
+              </span>
+            </div>
+
+            <h2 className="text-center text-xl sm:text-2xl font-bold mb-2" style={{ color: 'white' }}>
+              Qual o Distrito?
+            </h2>
+            <p className="text-center text-sm mb-8" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              Selecione o distrito onde pretende abastecer
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+              {ALL_DISTRICTS.map(d => (
+                <button
+                  key={d.name}
+                  onClick={() => handleDistrictSelect(d.name)}
+                  className="flex items-center gap-2.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all text-left"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${d.color}25`,
+                    color: 'rgba(255,255,255,0.8)',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.borderColor = `${d.color}60`
+                    e.currentTarget.style.background = `${d.color}10`
+                    e.currentTarget.style.color = d.color
+                    e.currentTarget.style.boxShadow = `0 0 24px ${d.color}20`
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = `${d.color}25`
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
+                    e.currentTarget.style.color = 'rgba(255,255,255,0.8)'
+                    e.currentTarget.style.boxShadow = 'none'
+                    e.currentTarget.style.transform = 'none'
+                  }}
+                >
+                  <MapPin size={14} style={{ color: d.color }} className="shrink-0" />
+                  <span className="truncate">{d.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 3: MUNICIPALITY ── */}
+        {step === 3 && (
+          <div className="animate-slide-up">
+            {/* Selected chips */}
+            <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
+              <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{
+                background: `${WIZARD_FUELS.find(f => f.type === selectedFuel)?.color}15`,
+                color: WIZARD_FUELS.find(f => f.type === selectedFuel)?.color,
+                border: `1px solid ${WIZARD_FUELS.find(f => f.type === selectedFuel)?.color}30`,
+              }}>
+                {WIZARD_FUELS.find(f => f.type === selectedFuel)?.icon} {WIZARD_FUELS.find(f => f.type === selectedFuel)?.label}
+              </span>
+              <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{
+                background: `${ALL_DISTRICTS.find(d => d.name === selectedDistrict)?.color}15`,
+                color: ALL_DISTRICTS.find(d => d.name === selectedDistrict)?.color,
+                border: `1px solid ${ALL_DISTRICTS.find(d => d.name === selectedDistrict)?.color}30`,
+              }}>
+                📍 {selectedDistrict}
+              </span>
+            </div>
+
+            <h2 className="text-center text-xl sm:text-2xl font-bold mb-2" style={{ color: 'white' }}>
+              Qual o seu Concelho?
+            </h2>
+            <p className="text-center text-sm mb-6" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              Selecione o concelho para resultados mais precisos
+            </p>
+
+            {loadingMunicipalities ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className="h-12 skeleton rounded-xl" />
+                ))}
+              </div>
+            ) : (
+              <>
+                {/* Search municipalities */}
+                {municipalities.length > 10 && (
+                  <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl" style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                  }}>
+                    <Search size={16} style={{ color: 'rgba(255,255,255,0.3)' }} />
+                    <input
+                      type="text"
+                      placeholder="Pesquisar concelho..."
+                      value={municipalitySearch}
+                      onChange={e => setMunicipalitySearch(e.target.value)}
+                      className="flex-1 text-sm bg-transparent outline-none"
+                      style={{ color: 'white' }}
+                    />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {filteredMunicipalities.map(m => (
+                    <button
+                      key={m}
+                      onClick={() => handleMunicipalitySelect(m)}
+                      className="px-4 py-3 rounded-xl text-sm font-semibold transition-all text-left truncate"
+                      style={{
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        color: 'rgba(255,255,255,0.7)',
+                      }}
+                      onMouseEnter={e => {
+                        const dc = ALL_DISTRICTS.find(d => d.name === selectedDistrict)?.color || '#818cf8'
+                        e.currentTarget.style.borderColor = `${dc}60`
+                        e.currentTarget.style.background = `${dc}10`
+                        e.currentTarget.style.color = dc
+                        e.currentTarget.style.transform = 'translateY(-2px)'
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
+                        e.currentTarget.style.color = 'rgba(255,255,255,0.7)'
+                        e.currentTarget.style.transform = 'none'
+                      }}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── STEP 4: LOCALITY ── */}
+        {step === 4 && (
+          <div className="animate-slide-up">
+            {/* Selected chips */}
+            <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
+              <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{
+                background: `${WIZARD_FUELS.find(f => f.type === selectedFuel)?.color}15`,
+                color: WIZARD_FUELS.find(f => f.type === selectedFuel)?.color,
+                border: `1px solid ${WIZARD_FUELS.find(f => f.type === selectedFuel)?.color}30`,
+              }}>
+                {WIZARD_FUELS.find(f => f.type === selectedFuel)?.icon} {WIZARD_FUELS.find(f => f.type === selectedFuel)?.label}
+              </span>
+              <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{
+                background: `${ALL_DISTRICTS.find(d => d.name === selectedDistrict)?.color}15`,
+                color: ALL_DISTRICTS.find(d => d.name === selectedDistrict)?.color,
+                border: `1px solid ${ALL_DISTRICTS.find(d => d.name === selectedDistrict)?.color}30`,
+              }}>
+                📍 {selectedDistrict}
+              </span>
+              <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{
+                background: 'rgba(251,191,36,0.12)',
+                color: '#fbbf24',
+                border: '1px solid rgba(251,191,36,0.25)',
+              }}>
+                🏘️ {selectedMunicipality}
+              </span>
+            </div>
+
+            <h2 className="text-center text-xl sm:text-2xl font-bold mb-2" style={{ color: 'white' }}>
+              Qual a Localidade?
+            </h2>
+            <p className="text-center text-sm mb-6" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              Selecione a localidade ou consulte todo o concelho
+            </p>
+
+            {loadingLocalities ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="h-12 skeleton rounded-xl" />
+                ))}
+              </div>
+            ) : (
+              <>
+                {/* Search localities */}
+                {localities.length > 10 && (
+                  <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl" style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                  }}>
+                    <Search size={16} style={{ color: 'rgba(255,255,255,0.3)' }} />
+                    <input
+                      type="text"
+                      placeholder="Pesquisar localidade..."
+                      value={localitySearch}
+                      onChange={e => setLocalitySearch(e.target.value)}
+                      className="flex-1 text-sm bg-transparent outline-none"
+                      style={{ color: 'white' }}
+                    />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {filteredLocalities.map(l => {
+                    const isSelected = selectedLocality === l
+                    return (
+                      <button
+                        key={l}
+                        onClick={() => handleLocalitySelect(l)}
+                        className="px-4 py-3 rounded-xl text-sm font-semibold transition-all text-left truncate"
+                        style={{
+                          background: isSelected ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.04)',
+                          border: `1px solid ${isSelected ? 'rgba(251,191,36,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                          color: isSelected ? '#fbbf24' : 'rgba(255,255,255,0.7)',
+                          boxShadow: isSelected ? '0 0 20px rgba(251,191,36,0.15)' : 'none',
+                        }}
+                      >
+                        {l}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* CONSULTAR — só aparece com localidade selecionada */}
+                {selectedLocality && (
+                  <div className="mt-8 animate-slide-up">
+                    <button
+                      onClick={handleConsultar}
+                      className="w-full py-4 sm:py-5 rounded-2xl text-lg sm:text-xl font-black text-white transition-all"
+                      style={{
+                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #a78bfa)',
+                        boxShadow: '0 0 40px rgba(99,102,241,0.4), 0 8px 32px rgba(0,0,0,0.3)',
+                        border: '1px solid rgba(139,92,246,0.3)',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.boxShadow = '0 0 60px rgba(99,102,241,0.6), 0 12px 40px rgba(0,0,0,0.3)'
+                        e.currentTarget.style.transform = 'translateY(-2px)'
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.boxShadow = '0 0 40px rgba(99,102,241,0.4), 0 8px 32px rgba(0,0,0,0.3)'
+                        e.currentTarget.style.transform = 'none'
+                      }}
+                    >
+                      🔍 CONSULTAR PREÇOS
+                    </button>
+                  </div>
+                )}
+
+                {/* Link secundário para ver todo o concelho */}
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => { setSelectedLocality(''); handleConsultar() }}
+                    className="text-sm font-semibold transition-colors"
+                    style={{ color: 'rgba(255,255,255,0.4)' }}
+                    onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
+                    onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.4)' }}
+                  >
+                    ou ver todos os postos de {selectedMunicipality} →
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* ── CALCULATOR BANNER ── */}
         <Link
           href="/calcular"
-          className="block mb-14 sm:mb-20 rounded-2xl p-5 sm:p-6 transition-all card-lift animate-slide-up relative overflow-hidden"
+          className="block mt-12 mb-10 rounded-2xl p-5 sm:p-6 transition-all card-lift animate-slide-up relative overflow-hidden"
           style={{
             animationDelay: '220ms',
             background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.06))',
@@ -446,58 +780,6 @@ function WelcomeScreen({ onFiltersChange }: { onFiltersChange: (f: Partial<Stati
             <span className="text-lg shrink-0" style={{ color: 'rgba(255,255,255,0.3)' }}>→</span>
           </div>
         </Link>
-
-        {/* ── STEPS ── */}
-        <div className="pb-16 sm:pb-28">
-          <div className="flex items-center gap-4 mb-10">
-            <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(129,140,248,0.3))' }} />
-            <span className="text-xs font-bold uppercase tracking-[0.15em] px-4 py-1.5 rounded-full" style={{ color: 'white', background: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.15)' }}>Como funciona</span>
-            <div className="flex-1 h-px" style={{ background: 'linear-gradient(90deg, rgba(129,140,248,0.3), transparent)' }} />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
-            {[
-              { num: '01', icon: <Search size={22} />, title: 'Pesquise', desc: 'Digite uma localidade, marca ou nome do posto.', accent: '#818cf8', accentLight: '#c7d2fe', glow: 'rgba(129,140,248,0.2)', border: 'rgba(129,140,248,0.2)' },
-              { num: '02', icon: <TrendingDown size={22} />, title: 'Compare', desc: 'Veja os preços ordenados do mais barato ao mais caro.', accent: '#34d399', accentLight: '#6ee7b7', glow: 'rgba(52,211,153,0.2)', border: 'rgba(52,211,153,0.2)' },
-              { num: '03', icon: <Bell size={22} />, title: 'Poupe', desc: 'Crie alertas e seja notificado quando o preço baixar.', accent: '#fbbf24', accentLight: '#fde68a', glow: 'rgba(251,191,36,0.2)', border: 'rgba(251,191,36,0.2)' },
-            ].map((item, i) => (
-              <div
-                key={item.num}
-                className="rounded-2xl p-6 animate-slide-up card-lift relative overflow-hidden group"
-                style={{
-                  animationDelay: `${240 + i * 80}ms`,
-                  background: 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${item.border}`,
-                  boxShadow: `0 0 32px ${item.glow}, 0 0 0 1px ${item.accent}08 inset`,
-                }}
-              >
-                {/* Corner number */}
-                <span className="absolute top-3 right-4 text-[48px] font-black leading-none transition-colors" style={{ color: `${item.accent}10` }}>
-                  {item.num}
-                </span>
-
-                {/* Top accent line */}
-                <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, transparent, ${item.accent}, transparent)`, opacity: 0.5 }} />
-
-                <div className="relative">
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-                    style={{
-                      background: `linear-gradient(135deg, ${item.accent}20, ${item.accent}08)`,
-                      color: item.accent,
-                      boxShadow: `0 0 20px ${item.glow}`,
-                      border: `1px solid ${item.accent}25`,
-                    }}
-                  >
-                    {item.icon}
-                  </div>
-                  <h3 className="text-base font-bold mb-2" style={{ color: 'white' }}>{item.title}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.65)' }}>{item.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
         {/* ── FOOTER ── */}
         <div className="text-center pb-8">
@@ -560,9 +842,9 @@ function SkeletonGrid({ viewMode }: { viewMode: string }) {
    Card Component
    ════════════════════════════════════════════════ */
 
-function StationCard({ station, index, fuelType, isFavorite, cheapestPrice, onSelect, onToggleFavorite, onAlert }: {
+function StationCard({ station, index, fuelType, isFavorite, cheapestPrice, isNearby, onSelect, onToggleFavorite, onAlert }: {
   station: Station; index: number; fuelType: string; isFavorite: boolean
-  cheapestPrice: number | null; onSelect: () => void; onToggleFavorite: () => void; onAlert: () => void
+  cheapestPrice: number | null; isNearby?: boolean; onSelect: () => void; onToggleFavorite: () => void; onAlert: () => void
 }) {
   const price = getPriceForFuel(station, fuelType)
   const isTop3 = index < 3
@@ -599,6 +881,11 @@ function StationCard({ station, index, fuelType, isFavorite, cheapestPrice, onSe
           <span className={`font-bold ${isTop3 ? 'text-[10px] text-white/90' : 'text-[9px] text-slate-500'}`}>
             {cfg?.label || `#${index + 1}`}
           </span>
+          {isNearby && (
+            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full ml-1" style={{ background: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.2)' }}>
+              Próximo
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-0.5 relative z-10">
           <button
@@ -643,7 +930,7 @@ function StationCard({ station, index, fuelType, isFavorite, cheapestPrice, onSe
             {station.municipality && (
               <div className="flex items-center gap-1 mt-0.5">
                 <MapPin size={8} className="text-slate-500 shrink-0" />
-                <p className="text-[9px] text-slate-400 truncate">{station.municipality}</p>
+                <p className="text-[9px] text-slate-400 truncate">{station.locality ? `${station.locality}, ${station.municipality}` : station.municipality}</p>
               </div>
             )}
           </div>
@@ -693,9 +980,9 @@ function StationCard({ station, index, fuelType, isFavorite, cheapestPrice, onSe
    List Row Component
    ════════════════════════════════════════════════ */
 
-function StationRow({ station, index, fuelType, isFavorite, onSelect, onToggleFavorite, onAlert }: {
+function StationRow({ station, index, fuelType, isFavorite, isNearby, onSelect, onToggleFavorite, onAlert }: {
   station: Station; index: number; fuelType: string; isFavorite: boolean
-  onSelect: () => void; onToggleFavorite: () => void; onAlert: () => void
+  isNearby?: boolean; onSelect: () => void; onToggleFavorite: () => void; onAlert: () => void
 }) {
   const price = getPriceForFuel(station, fuelType)
   const priceColor = getPriceColor(price)
@@ -722,12 +1009,19 @@ function StationRow({ station, index, fuelType, isFavorite, onSelect, onToggleFa
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-white/90 truncate">{station.name}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm font-bold text-white/90 truncate">{station.name}</p>
+          {isNearby && (
+            <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{ background: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.2)' }}>
+              Próximo
+            </span>
+          )}
+        </div>
         {station.brand && <p className="text-[10px] font-black uppercase tracking-wider mt-0.5" style={{ color: cfg?.badge || priceColor }}>{station.brand}</p>}
         {station.address && (
           <div className="flex items-center gap-1 mt-0.5">
             <MapPin size={9} className="text-slate-500 shrink-0" />
-            <p className="text-[9px] text-slate-400 truncate">{station.address}</p>
+            <p className="text-[9px] text-slate-400 truncate">{station.locality ? `${station.locality} — ${station.address}` : station.address}</p>
           </div>
         )}
         {station.fuels.length > 0 && (

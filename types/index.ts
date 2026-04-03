@@ -2,7 +2,7 @@ export type FuelType =
   | 'Gasolina 95'
   | 'Gasolina 98'
   | 'Gasóleo'
-  | 'Gasóleo Colorido'
+  | 'Gasóleo Verde'
   | 'GPL Auto'
   | 'GNV'
   | string
@@ -18,6 +18,7 @@ export interface Station {
   name: string
   brand: string | null
   address: string | null
+  locality: string | null
   municipality: string | null
   district: string | null
   lat: number | null
@@ -41,5 +42,7 @@ export interface StationFilters {
   search: string
   fuelType: FilterFuelType
   district: string
+  municipality: string
+  locality: string
   sortBy: 'price_asc' | 'price_desc' | 'name'
 }

@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS fuel_stations (
   name TEXT NOT NULL,
   brand TEXT,
   address TEXT,
+  locality TEXT,                          -- Localidade (ex: Mem Martins, Carcavelos)
   municipality TEXT,
   district TEXT,
   lat NUMERIC(10, 7),
@@ -18,6 +19,7 @@ CREATE TABLE IF NOT EXISTS fuel_stations (
 
 CREATE INDEX IF NOT EXISTS idx_stations_district ON fuel_stations(district);
 CREATE INDEX IF NOT EXISTS idx_stations_municipality ON fuel_stations(municipality);
+CREATE INDEX IF NOT EXISTS idx_stations_locality ON fuel_stations(locality);
 CREATE INDEX IF NOT EXISTS idx_stations_location ON fuel_stations USING GIST (point(lng, lat));
 
 -- Tabela de favoritos (ligada ao utilizador Supabase Auth)

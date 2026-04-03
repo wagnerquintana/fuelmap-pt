@@ -15,6 +15,8 @@ const DEFAULT_FILTERS: StationFilters = {
   search: '',
   fuelType: 'Gasolina simples 95',
   district: '',
+  municipality: '',
+  locality: '',
   sortBy: 'price_asc',
 }
 
@@ -40,8 +42,8 @@ export default function Home() {
   const searchCountRef = useRef(0)
   const saveSearchShownRef = useRef(false)
 
-  // Only fetch when there's a search query or district selected
-  const shouldFetch = !!(filters.search || filters.district)
+  // Only fetch when there's a search query, district, municipality or locality selected
+  const shouldFetch = !!(filters.search || filters.district || filters.municipality || filters.locality)
 
   const fetchStations = useCallback(async () => {
     if (!shouldFetch) {
@@ -54,6 +56,8 @@ export default function Home() {
     const params = new URLSearchParams()
     if (filters.search) params.set('search', filters.search)
     if (filters.district) params.set('district', filters.district)
+    if (filters.municipality) params.set('municipality', filters.municipality)
+    if (filters.locality) params.set('locality', filters.locality)
     const res = await fetch(`/api/stations?${params}`)
     if (res.ok) setStations(await res.json())
     setLoadingStations(false)
@@ -64,7 +68,7 @@ export default function Home() {
       saveSearchShownRef.current = true
       setTimeout(() => setShowSaveSearch(true), 800)
     }
-  }, [filters.search, filters.district, shouldFetch])
+  }, [filters.search, filters.district, filters.municipality, filters.locality, shouldFetch])
 
   useEffect(() => {
     const t = setTimeout(fetchStations, 350)
