@@ -5,6 +5,7 @@ import { X, Bell, Loader2, CheckCircle } from 'lucide-react'
 import { useEscapeKey } from '@/lib/useEscapeKey'
 import { Station } from '@/types'
 import { FUEL_TYPES, FUEL_LABELS } from '@/lib/utils'
+import PrivacyCheckbox from './PrivacyCheckbox'
 
 interface AlertModalProps {
   station: Station
@@ -23,6 +24,7 @@ export default function AlertModal({ station, defaultFuelType, onClose }: AlertM
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -106,11 +108,11 @@ export default function AlertModal({ station, defaultFuelType, onClose }: AlertM
                 baixar de <strong className="text-white">{priceLimit} €/L</strong>.
               </p>
             </div>
-            <div className="bg-white px-6 py-5">
+            <div className="px-6 py-5" style={{ background: 'var(--bg-raised)' }}>
               <button
                 onClick={handleClose}
                 className="w-full py-3 rounded-xl font-bold text-sm text-white transition hover:opacity-90"
-                style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}
+                style={{ background: 'linear-gradient(135deg, #059669, #10b981)', boxShadow: '0 0 16px rgba(16,185,129,0.25)' }}
               >
                 Fechar
               </button>
@@ -147,11 +149,11 @@ export default function AlertModal({ station, defaultFuelType, onClose }: AlertM
             </div>
 
             {/* Body */}
-            <div className="bg-white px-6 py-5">
+            <div className="px-6 py-5" style={{ background: 'var(--bg-raised)' }}>
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Combustível */}
                 <div>
-                  <label className="label-xs block mb-1.5">Combustível</label>
+                  <label className="text-[11px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>Combustível</label>
                   <select
                     value={fuelType}
                     onChange={e => {
@@ -161,13 +163,13 @@ export default function AlertModal({ station, defaultFuelType, onClose }: AlertM
                     }}
                     className="w-full text-sm rounded-xl px-3 py-2.5 outline-none transition-all"
                     style={{
-                      background: 'var(--surface2)',
-                      border: '1px solid var(--border)',
-                      color: 'var(--text)',
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      color: 'white',
                     }}
                   >
                     {availableFuels.map(f => (
-                      <option key={f.type} value={f.type}>
+                      <option key={f.type} value={f.type} style={{ background: '#1a1a2e', color: 'white' }}>
                         {FUEL_LABELS[f.type] || f.type} — {f.price?.toFixed(3)} €/L
                       </option>
                     ))}
@@ -176,7 +178,7 @@ export default function AlertModal({ station, defaultFuelType, onClose }: AlertM
 
                 {/* Preço limite */}
                 <div>
-                  <label className="label-xs block mb-1.5">Avisar quando baixar de</label>
+                  <label className="text-[11px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>Avisar quando baixar de</label>
                   <div className="relative">
                     <input
                       type="number"
@@ -188,25 +190,25 @@ export default function AlertModal({ station, defaultFuelType, onClose }: AlertM
                       required
                       className="w-full rounded-xl px-3 py-2.5 pr-12 text-sm outline-none transition-all font-mono"
                       style={{
-                        background: 'var(--surface2)',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text)',
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: 'white',
                       }}
-                      onFocus={e => (e.currentTarget.style.borderColor = '#f97316')}
-                      onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+                      onFocus={e => { e.currentTarget.style.borderColor = '#f97316'; e.currentTarget.style.boxShadow = '0 0 12px rgba(249,115,22,0.15)' }}
+                      onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'none' }}
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>€/L</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.4)' }}>€/L</span>
                   </div>
                   {currentPrice && (
-                    <p className="text-[10px] mt-1" style={{ color: 'var(--text-dim)' }}>
-                      Preço atual: <strong style={{ color: 'var(--text-muted)' }}>{currentPrice.toFixed(3)} €/L</strong>
+                    <p className="text-[10px] mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                      Preço atual: <strong style={{ color: 'rgba(255,255,255,0.7)' }}>{currentPrice.toFixed(3)} €/L</strong>
                     </p>
                   )}
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label className="label-xs block mb-1.5">Email</label>
+                  <label className="text-[11px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>Email</label>
                   <input
                     type="email"
                     placeholder="o-teu@email.com"
@@ -215,22 +217,24 @@ export default function AlertModal({ station, defaultFuelType, onClose }: AlertM
                     required
                     className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all"
                     style={{
-                      background: 'var(--surface2)',
-                      border: '1px solid var(--border)',
-                      color: 'var(--text)',
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      color: 'white',
                     }}
-                    onFocus={e => (e.currentTarget.style.borderColor = '#f97316')}
-                    onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+                    onFocus={e => { e.currentTarget.style.borderColor = '#f97316'; e.currentTarget.style.boxShadow = '0 0 12px rgba(249,115,22,0.15)' }}
+                    onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'none' }}
                   />
                 </div>
+
+                <PrivacyCheckbox checked={acceptedPrivacy} onChange={setAcceptedPrivacy} />
 
                 {error && <p className="text-xs" style={{ color: 'var(--red)' }}>{error}</p>}
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || !acceptedPrivacy}
                   className="w-full py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition hover:opacity-90 disabled:opacity-50 relative overflow-hidden"
-                  style={{ background: 'linear-gradient(135deg, #c2410c, #f97316)' }}
+                  style={{ background: 'linear-gradient(135deg, #c2410c, #f97316)', boxShadow: '0 0 20px rgba(249,115,22,0.25)' }}
                 >
                   <span className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(115deg, rgba(255,255,255,0.15) 0%, transparent 55%)' }} />
                   {loading && <Loader2 size={14} className="animate-spin" />}

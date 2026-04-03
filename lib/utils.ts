@@ -47,3 +47,13 @@ export const FUEL_LABELS: Record<string, string> = {
   'Gasóleo especial': 'Gasóleo+',
   'GPL Auto': 'GPL Auto',
 }
+
+export const FUEL_SLUGS: Record<string, string> = {
+  all: 'all',
+  'Gasolina simples 95': 'g95',
+  'Gasolina especial 95': 'g95e',
+  'Gasolina especial 98': 'g98',
+  'Gasóleo simples': 'gsl',
+  'Gasóleo especial': 'gsle',
+  'GPL Auto': 'gpl',
+}

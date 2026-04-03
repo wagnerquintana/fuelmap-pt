@@ -1,20 +1,19 @@
 'use client'
 
-import { useState } from 'react'
-import { Calculator, Fuel, TrendingDown, Loader2, CheckCircle, ArrowLeft, Zap } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Calculator, Fuel, TrendingDown, Loader2, CheckCircle, ArrowLeft, Zap, MapPin } from 'lucide-react'
 import Link from 'next/link'
-import { FUEL_TYPES, FUEL_LABELS } from '@/lib/utils'
+import { FUEL_TYPES, FUEL_LABELS, DISTRICTS } from '@/lib/utils'
+import PrivacyCheckbox from '@/components/PrivacyCheckbox'
+import { Station } from '@/types'
 
-const FUEL_PRICES: Record<string, number> = {
-  'Gasolina simples 95': 1.85,
-  'Gasolina especial 95': 1.92,
-  'Gasolina especial 98': 2.05,
-  'Gasóleo simples': 1.75,
-  'Gasóleo especial': 1.82,
-  'GPL Auto': 0.85,
+function getPriceForFuel(station: Station, fuelType: string): number | null {
+  const fuel = station.fuels.find(f => f.type === fuelType)
+  return fuel?.price ?? null
 }
 
 export default function CalcularPage() {
+  const [district, setDistrict] = useState('')
   const [km, setKm] = useState('')
   const [consumo, setConsumo] = useState('')
   const [fuelType, setFuelType] = useState('Gasolina simples 95')
@@ -22,20 +21,68 @@ export default function CalcularPage() {
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [emailError, setEmailError] = useState('')
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
   const [showResult, setShowResult] = useState(false)
+
+  // Real price data
+  const [stations, setStations] = useState<Station[]>([])
+  const [loadingPrices, setLoadingPrices] = useState(false)
+  const [bestPrice, setBestPrice] = useState<number | null>(null)
+  const [avgPrice, setAvgPrice] = useState<number | null>(null)
+  const [bestStation, setBestStation] = useState<string>('')
+  const [stationCount, setStationCount] = useState(0)
+
+  // Fetch real prices when district changes
+  const fetchPrices = useCallback(async () => {
+    if (!district) {
+      setBestPrice(null)
+      setAvgPrice(null)
+      setBestStation('')
+      setStationCount(0)
+      return
+    }
+    setLoadingPrices(true)
+    const res = await fetch(`/api/stations?district=${encodeURIComponent(district)}`)
+    if (res.ok) {
+      const data: Station[] = await res.json()
+      setStations(data)
+
+      // Calculate real prices for selected fuel
+      const prices = data
+        .map(s => ({ name: s.name, price: getPriceForFuel(s, fuelType) }))
+        .filter((p): p is { name: string; price: number } => p.price !== null)
+        .sort((a, b) => a.price - b.price)
+
+      if (prices.length > 0) {
+        setBestPrice(prices[0].price)
+        setBestStation(prices[0].name)
+        setAvgPrice(prices.reduce((sum, p) => sum + p.price, 0) / prices.length)
+        setStationCount(prices.length)
+      } else {
+        setBestPrice(null)
+        setAvgPrice(null)
+        setBestStation('')
+        setStationCount(0)
+      }
+    }
+    setLoadingPrices(false)
+  }, [district, fuelType])
+
+  useEffect(() => {
+    const t = setTimeout(fetchPrices, 300)
+    return () => clearTimeout(t)
+  }, [fetchPrices])
 
   const kmNum = parseFloat(km) || 0
   const consumoNum = parseFloat(consumo) || 0
-  const currentPrice = FUEL_PRICES[fuelType] || 1.85
-  const bestPrice = currentPrice * 0.88
-
-  const custoAtual = (kmNum / 100) * consumoNum * currentPrice
-  const custoBest = (kmNum / 100) * consumoNum * bestPrice
-  const poupancaMes = custoAtual - custoBest
-  const poupancaAno = poupancaMes * 12
   const litrosMes = (kmNum / 100) * consumoNum
 
-  const canCalculate = kmNum > 0 && consumoNum > 0
+  const canCalculate = kmNum > 0 && consumoNum > 0 && bestPrice !== null && avgPrice !== null
+
+  const custoMedia = canCalculate ? litrosMes * avgPrice! : 0
+  const custoBest = canCalculate ? litrosMes * bestPrice! : 0
+  const poupancaMes = custoMedia - custoBest
+  const poupancaAno = poupancaMes * 12
 
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -50,7 +97,7 @@ export default function CalcularPage() {
         email,
         source: 'calculator',
         fuel_type: fuelType,
-        metadata: { km: kmNum, consumo: consumoNum, poupanca_mes: poupancaMes.toFixed(2) },
+        metadata: { km: kmNum, consumo: consumoNum, district, poupanca_mes: poupancaMes.toFixed(2), best_station: bestStation },
       }),
     })
 
@@ -63,69 +110,93 @@ export default function CalcularPage() {
     }
   }
 
+  const inputStyle = {
+    background: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    color: 'white',
+  }
+
   return (
-    <div className="min-h-screen" style={{ background: 'var(--gradient-bg)' }}>
-      {/* Header */}
+    <div className="h-dvh overflow-y-auto overscroll-contain" style={{ background: 'var(--bg-base)' }}>
       <div className="max-w-2xl mx-auto px-4 pt-6 pb-3">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full mb-6 transition-all hover:opacity-80"
-          style={{
-            background: 'linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)) padding-box, linear-gradient(135deg, #3b82f6, #8b5cf6) border-box',
-            border: '1.5px solid transparent',
-            color: '#4f46e5',
-          }}
+          className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg mb-6 transition-all"
+          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)' }}
         >
           <ArrowLeft size={13} strokeWidth={2.5} />
-          Voltar ao mapa
+          Voltar
         </Link>
 
-        <div className="text-center mb-6">
+        <div className="text-center mb-8">
           <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-            style={{
-              background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-              boxShadow: '0 8px 28px rgba(99,102,241,0.35)',
-            }}
+            className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4"
+            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 0 24px rgba(99,102,241,0.3)' }}
           >
-            <Calculator size={28} className="text-white" />
+            <Calculator size={26} className="text-white" />
           </div>
-          <h1
-            className="text-3xl font-black mb-2"
-            style={{
-              background: 'linear-gradient(135deg, #1e293b, #334155)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
+          <h1 className="text-2xl sm:text-3xl font-black" style={{ color: 'white' }}>
             Calculadora de Poupança
           </h1>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            Descobre quanto podes poupar por mês usando os postos mais baratos
+          <p className="text-sm mt-2" style={{ color: 'rgba(255,255,255,0.6)' }}>
+            Descobre quanto poupas usando os postos mais baratos do teu distrito
           </p>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 pb-16">
-        {/* ═══ Formulário ═══ */}
-        <div
-          className="rounded-3xl p-6 mb-5"
-          style={{
-            background: 'rgba(255,255,255,0.88)',
-            backdropFilter: 'blur(24px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-            boxShadow: 'var(--shadow-card), 0 0 0 1px rgba(255,255,255,0.7) inset',
-            border: '1px solid rgba(226,232,240,0.5)',
-          }}
-        >
-          <h2 className="text-sm font-black text-gray-800 mb-4 flex items-center gap-2">
+        {/* Formulario */}
+        <div className="rounded-2xl p-5 sm:p-6 mb-5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+
+          {/* Distrito — primeiro campo */}
+          <div className="mb-5">
+            <label className="text-[11px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <MapPin size={11} className="inline mr-1" style={{ verticalAlign: '-1px' }} />
+              Onde abasteces?
+            </label>
+            <select
+              value={district}
+              onChange={e => setDistrict(e.target.value)}
+              className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all"
+              style={{
+                ...inputStyle,
+                appearance: 'none',
+                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 12px center',
+                backgroundSize: '14px',
+                paddingRight: '36px',
+              }}
+            >
+              <option value="" style={{ background: '#1a1a2e' }}>Seleciona o teu distrito</option>
+              {DISTRICTS.map(d => (
+                <option key={d} value={d} style={{ background: '#1a1a2e', color: 'white' }}>{d}</option>
+              ))}
+            </select>
+            {district && !loadingPrices && bestPrice !== null && (
+              <div className="flex items-center gap-3 mt-2 text-[11px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                <span><strong style={{ color: 'var(--green)' }}>{bestPrice.toFixed(3)} €/L</strong> melhor</span>
+                <span>·</span>
+                <span><strong style={{ color: 'var(--color-primary)' }}>{avgPrice?.toFixed(3)} €/L</strong> media</span>
+                <span>·</span>
+                <span>{stationCount} postos</span>
+              </div>
+            )}
+            {loadingPrices && (
+              <div className="flex items-center gap-2 mt-2 text-[11px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                <Loader2 size={12} className="animate-spin" /> A carregar preços reais...
+              </div>
+            )}
+          </div>
+
+          <h2 className="text-sm font-bold mb-4 flex items-center gap-2" style={{ color: 'white' }}>
             <Fuel size={16} style={{ color: 'var(--color-primary)' }} />
             Os teus dados de consumo
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="label-xs block mb-1.5">Km por mês</label>
+              <label className="text-[11px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>Km por mês</label>
               <div className="relative">
                 <input
                   type="number"
@@ -133,20 +204,16 @@ export default function CalcularPage() {
                   value={km}
                   onChange={e => setKm(e.target.value)}
                   className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all pr-12"
-                  style={{
-                    background: 'var(--surface2)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text)',
-                  }}
-                  onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
-                  onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+                  style={inputStyle}
+                  onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-primary)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(129,140,248,0.15)' }}
+                  onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'none' }}
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>km</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.35)' }}>km</span>
               </div>
             </div>
 
             <div>
-              <label className="label-xs block mb-1.5">Consumo médio</label>
+              <label className="text-[11px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: 'rgba(255,255,255,0.5)' }}>Consumo médio</label>
               <div className="relative">
                 <input
                   type="number"
@@ -155,153 +222,112 @@ export default function CalcularPage() {
                   value={consumo}
                   onChange={e => setConsumo(e.target.value)}
                   className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all pr-20"
-                  style={{
-                    background: 'var(--surface2)',
-                    border: '1px solid var(--border)',
-                    color: 'var(--text)',
-                  }}
-                  onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
-                  onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+                  style={inputStyle}
+                  onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-primary)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(129,140,248,0.15)' }}
+                  onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'none' }}
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>L/100km</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.35)' }}>L/100km</span>
               </div>
             </div>
           </div>
 
           <div className="mt-4">
-            <label className="label-xs block mb-2">Tipo de combustível</label>
+            <label className="text-[11px] font-bold uppercase tracking-wider block mb-2" style={{ color: 'rgba(255,255,255,0.5)' }}>Tipo de combustível</label>
             <div className="flex gap-2 flex-wrap">
-              {FUEL_TYPES.filter(t => t !== 'all').map(type => {
-                const active = fuelType === type
-                return (
-                  <button
-                    key={type}
-                    onClick={() => setFuelType(type)}
-                    className="text-[11px] px-3.5 py-1.5 rounded-full font-bold"
-                    style={active ? {
-                      background: 'linear-gradient(rgba(241,245,255,0.95), rgba(241,245,255,0.95)) padding-box, linear-gradient(135deg, #3b82f6, #8b5cf6) border-box',
-                      border: '1.5px solid transparent',
-                      color: '#4f46e5',
-                      boxShadow: '0 0 0 3px rgba(99,102,241,0.10), 0 4px 16px rgba(59,130,246,0.18)',
-                      transform: 'translateY(-1px)',
-                    } : {
-                      background: 'rgba(255,255,255,0.78)',
-                      border: '1px solid rgba(203,213,225,0.5)',
-                      color: '#94a3b8',
-                    }}
-                  >
-                    {FUEL_LABELS[type]}
-                  </button>
-                )
-              })}
+              {FUEL_TYPES.filter(t => t !== 'all').map(type => (
+                <button
+                  key={type}
+                  onClick={() => setFuelType(type)}
+                  className={`pill ${fuelType === type ? 'pill-active' : ''}`}
+                >
+                  {FUEL_LABELS[type]}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* ═══ Resultado ═══ */}
+        {/* Resultado */}
         {canCalculate && (
-          <div
-            className="rounded-3xl p-6 mb-5 animate-slide-up"
-            style={{
-              background: 'rgba(255,255,255,0.88)',
-              backdropFilter: 'blur(24px) saturate(180%)',
-              WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-              boxShadow: 'var(--shadow-card), 0 0 0 1px rgba(255,255,255,0.7) inset',
-              border: '1px solid rgba(226,232,240,0.5)',
-            }}
-          >
-            <h2 className="text-sm font-black text-gray-800 mb-4 flex items-center gap-2">
-              <TrendingDown size={16} className="text-green-500" />
-              O teu resultado
+          <div className="rounded-2xl p-5 sm:p-6 mb-5 animate-slide-up" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <h2 className="text-sm font-bold mb-4 flex items-center gap-2" style={{ color: 'white' }}>
+              <TrendingDown size={16} style={{ color: 'var(--green)' }} />
+              O teu resultado em {district}
             </h2>
 
-            {/* Comparação atual vs melhor */}
-            <div className="grid grid-cols-2 gap-3 mb-5">
-              <div className="rounded-2xl p-4 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #fef2f2, #fee2e2)' }}>
-                <p className="label-xs block mb-1" style={{ color: '#dc2626' }}>Gastas</p>
-                <p className="text-2xl font-black" style={{ color: '#dc2626' }}>{custoAtual.toFixed(0)}€</p>
-                <p className="text-[10px] font-semibold mt-0.5" style={{ color: '#f87171' }}>por mês</p>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="rounded-xl p-4" style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.15)' }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#f87171' }}>Preço médio</p>
+                <p className="text-2xl font-black" style={{ color: '#f87171' }}>{custoMedia.toFixed(0)}€</p>
+                <p className="text-[10px] font-semibold mt-0.5" style={{ color: 'rgba(248,113,113,0.6)' }}>por mês</p>
               </div>
-              <div className="rounded-2xl p-4 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)' }}>
-                <p className="label-xs block mb-1" style={{ color: '#16a34a' }}>Posto + barato</p>
-                <p className="text-2xl font-black" style={{ color: '#16a34a' }}>{custoBest.toFixed(0)}€</p>
-                <p className="text-[10px] font-semibold mt-0.5" style={{ color: '#4ade80' }}>por mês</p>
+              <div className="rounded-xl p-4" style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.15)' }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#34d399' }}>Posto + barato</p>
+                <p className="text-2xl font-black" style={{ color: '#34d399' }}>{custoBest.toFixed(0)}€</p>
+                <p className="text-[10px] font-semibold mt-0.5" style={{ color: 'rgba(52,211,153,0.6)' }}>por mês</p>
               </div>
             </div>
 
-            {/* Gate de email OU resultado completo */}
-            {!showResult ? (
-              <div
-                className="rounded-2xl p-5 text-center relative overflow-hidden"
-                style={{ background: 'linear-gradient(135deg, #eff6ff, #f5f3ff)' }}
-              >
-                {/* Shine */}
-                <span className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(120deg, rgba(255,255,255,0.4) 0%, transparent 50%)' }} />
+            {/* Best station name */}
+            {bestStation && (
+              <p className="text-xs mb-4 px-3 py-2 rounded-lg" style={{ background: 'rgba(52,211,153,0.06)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(52,211,153,0.1)' }}>
+                <MapPin size={11} className="inline mr-1" style={{ verticalAlign: '-1px', color: 'var(--green)' }} />
+                Mais barato: <strong style={{ color: 'white' }}>{bestStation}</strong> — {bestPrice!.toFixed(3)} €/L
+              </p>
+            )}
 
-                <div
-                  className="text-4xl font-black mb-2 select-none"
-                  style={{ WebkitTextStroke: '2px #d1d5db', color: 'transparent', filter: 'blur(6px)' }}
-                >
-                  €{poupancaMes.toFixed(0)}/mês
+            {!showResult ? (
+              <div className="rounded-xl p-5 text-center" style={{ background: 'rgba(129,140,248,0.06)', border: '1px solid rgba(129,140,248,0.12)' }}>
+                <div className="text-4xl font-black mb-2 select-none" style={{ color: 'rgba(255,255,255,0.08)', filter: 'blur(6px)' }}>
+                  €{poupancaMes.toFixed(0)}/mes
                 </div>
 
                 <div className="flex items-center justify-center gap-1.5 mb-3">
-                  <Zap size={14} className="text-amber-500" fill="currentColor" />
-                  <p className="text-sm font-bold text-gray-700">
-                    Podes poupar até <strong className="text-indigo-600">€{poupancaAno.toFixed(0)} por ano</strong>
+                  <Zap size={14} style={{ color: 'var(--gold)' }} fill="currentColor" />
+                  <p className="text-sm font-bold" style={{ color: 'white' }}>
+                    Podes poupar até <strong style={{ color: 'var(--color-primary)' }}>€{poupancaAno.toFixed(0)} por ano</strong>
                   </p>
                 </div>
 
-                <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
+                <p className="text-xs mb-4" style={{ color: 'rgba(255,255,255,0.5)' }}>
                   Introduz o teu email para ver o relatório completo
                 </p>
 
                 {submitted ? (
-                  <div className="flex items-center justify-center gap-2 text-green-600 font-bold text-sm">
+                  <div className="flex items-center justify-center gap-2 font-bold text-sm" style={{ color: 'var(--green)' }}>
                     <CheckCircle size={18} />
                     Relatório enviado para {email}!
                   </div>
                 ) : (
-                  <form onSubmit={handleEmailSubmit} className="flex gap-2">
-                    <input
-                      type="email"
-                      placeholder="o-teu@email.com"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      required
-                      className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none transition-all"
-                      style={{
-                        background: 'white',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text)',
-                      }}
-                      onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
-                      onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-                    />
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="px-5 py-2.5 rounded-xl text-white font-bold text-sm flex items-center gap-1.5 transition hover:opacity-90 disabled:opacity-50 shrink-0 relative overflow-hidden"
-                      style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}
-                    >
-                      <span className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(115deg, rgba(255,255,255,0.15) 0%, transparent 55%)' }} />
-                      {loading ? <Loader2 size={14} className="animate-spin" /> : null}
-                      Ver resultado
-                    </button>
+                  <form onSubmit={handleEmailSubmit} className="space-y-3">
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        placeholder="o-teu@email.com"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        required
+                        className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none transition-all"
+                        style={inputStyle}
+                        onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-primary)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(129,140,248,0.15)' }}
+                        onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'none' }}
+                      />
+                      <button type="submit" disabled={loading || !acceptedPrivacy} className="btn btn-primary shrink-0">
+                        {loading ? <Loader2 size={14} className="animate-spin" /> : null}
+                        Ver resultado
+                      </button>
+                    </div>
+                    <PrivacyCheckbox checked={acceptedPrivacy} onChange={setAcceptedPrivacy} />
                   </form>
                 )}
                 {emailError && <p className="text-xs mt-2" style={{ color: 'var(--red)' }}>{emailError}</p>}
               </div>
             ) : (
-              /* ── Resultado completo ── */
               <div className="space-y-3 animate-slide-up">
-                <div
-                  className="rounded-2xl p-5 text-center"
-                  style={{ background: 'linear-gradient(135deg, #f0fdf4, #ecfdf5)' }}
-                >
-                  <p className="label-xs block mb-1" style={{ color: '#16a34a' }}>A tua poupança</p>
-                  <p className="text-5xl font-black" style={{ color: '#16a34a' }}>€{poupancaMes.toFixed(0)}</p>
-                  <p className="text-sm font-bold mt-1" style={{ color: '#22c55e' }}>
+                <div className="rounded-xl p-5 text-center" style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.15)', boxShadow: '0 0 24px rgba(52,211,153,0.1)' }}>
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: '#34d399' }}>A tua poupança</p>
+                  <p className="text-5xl font-black" style={{ color: '#34d399' }}>€{poupancaMes.toFixed(0)}</p>
+                  <p className="text-sm font-bold mt-1" style={{ color: 'rgba(52,211,153,0.7)' }}>
                     por mês · €{poupancaAno.toFixed(0)} por ano
                   </p>
                 </div>
@@ -309,48 +335,39 @@ export default function CalcularPage() {
                 <div className="grid grid-cols-3 gap-2 text-center">
                   {[
                     { label: 'Litros/mês', value: litrosMes.toFixed(0) + ' L' },
-                    { label: 'Preço atual', value: currentPrice.toFixed(3) + ' €/L' },
-                    { label: 'Melhor preço', value: bestPrice.toFixed(3) + ' €/L' },
+                    { label: 'Média distrito', value: avgPrice!.toFixed(3) + ' €/L' },
+                    { label: 'Melhor preço', value: bestPrice!.toFixed(3) + ' €/L' },
                   ].map(({ label, value }) => (
-                    <div
-                      key={label}
-                      className="rounded-xl p-3"
-                      style={{
-                        background: 'var(--surface2)',
-                        border: '1px solid var(--border)',
-                      }}
-                    >
-                      <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
-                      <p className="text-sm font-black mt-0.5" style={{ color: 'var(--text)' }}>{value}</p>
+                    <div key={label} className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                      <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.4)' }}>{label}</p>
+                      <p className="text-sm font-black mt-0.5" style={{ color: 'white' }}>{value}</p>
                     </div>
                   ))}
                 </div>
 
-                <Link
-                  href="/"
-                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl font-bold text-sm text-white transition hover:opacity-90 relative overflow-hidden"
-                  style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}
-                >
-                  <span className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(115deg, rgba(255,255,255,0.15) 0%, transparent 55%)' }} />
+                <Link href={`/?district=${encodeURIComponent(district)}`} className="btn btn-primary w-full py-3 text-sm">
                   <Fuel size={16} />
-                  Ver os postos mais baratos no mapa
+                  Ver postos em {district}
                 </Link>
               </div>
             )}
           </div>
         )}
 
-        {/* Estado vazio */}
+        {/* Empty state */}
         {!canCalculate && (
           <div className="text-center py-12">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-              style={{ background: 'rgba(255,255,255,0.6)' }}
-            >
-              <Calculator size={28} style={{ color: 'var(--text-dim)' }} />
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <Calculator size={24} style={{ color: 'rgba(255,255,255,0.3)' }} />
             </div>
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              Preenche os campos acima para ver a tua poupança
+            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              {!district
+                ? 'Seleciona o teu distrito para comecar'
+                : loadingPrices
+                ? 'A carregar preços...'
+                : bestPrice === null
+                ? `Sem preços de ${FUEL_LABELS[fuelType]} em ${district}`
+                : 'Preenche km e consumo para calcular'}
             </p>
           </div>
         )}
