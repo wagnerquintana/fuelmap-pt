@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Search, X, Fuel, Star, LogOut, Calculator, LayoutGrid, List, MapPin, ChevronDown, RotateCcw } from 'lucide-react'
+import { Search, X, Fuel, Star, LogOut, Calculator, LayoutGrid, List, MapPin, ChevronDown, RotateCcw, Zap } from 'lucide-react'
 import Link from 'next/link'
-import { StationFilters, FilterFuelType } from '@/types'
+import { StationFilters, FilterFuelType, AppMode } from '@/types'
 import { FUEL_TYPES, FUEL_LABELS, FUEL_SLUGS, DISTRICTS } from '@/lib/utils'
 import { User } from '@supabase/supabase-js'
 
@@ -14,6 +14,8 @@ interface HeaderProps {
   showFavoritesOnly: boolean
   viewMode: 'cards' | 'list'
   hasSearched: boolean
+  appMode: AppMode
+  onAppModeChange: (mode: AppMode) => void
   onFiltersChange: (f: Partial<StationFilters>) => void
   onToggleFavorites: () => void
   onViewModeChange: (mode: 'cards' | 'list') => void
@@ -25,6 +27,7 @@ const RESULT_FUEL_TYPES: FilterFuelType[] = FUEL_TYPES.filter(t => t !== 'all')
 
 export default function Header({
   filters, user, stationCount, showFavoritesOnly, viewMode, hasSearched,
+  appMode, onAppModeChange,
   onFiltersChange, onToggleFavorites, onViewModeChange, onSignOut,
 }: HeaderProps) {
   const [localSearch, setLocalSearch] = useState(filters.search)
@@ -113,14 +116,37 @@ export default function Header({
           <button onClick={goHome} className="flex items-center gap-2.5 shrink-0 group" title="Nova consulta">
             <div
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 0 16px var(--glow-primary)' }}
+              style={{
+                background: appMode === 'ev'
+                  ? 'linear-gradient(135deg, #06b6d4, #22d3ee)'
+                  : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                boxShadow: appMode === 'ev' ? '0 0 16px var(--ev-glow)' : '0 0 16px var(--glow-primary)',
+              }}
             >
-              <Fuel size={16} color="white" strokeWidth={2.5} />
+              {appMode === 'ev' ? <Zap size={16} color="white" strokeWidth={2.5} /> : <Fuel size={16} color="white" strokeWidth={2.5} />}
             </div>
             <span className="font-extrabold text-base tracking-tight hidden sm:block text-white">
-              Fuel<span style={{ color: 'var(--color-primary)' }}>Map</span>
+              Fuel<span style={{ color: appMode === 'ev' ? 'var(--ev-primary)' : 'var(--color-primary)' }}>Map</span>
             </span>
           </button>
+
+          {/* Mode Toggle — Fuel / EV */}
+          <div className="mode-toggle shrink-0">
+            <button
+              data-mode="fuel"
+              className={appMode === 'fuel' ? 'active' : ''}
+              onClick={() => onAppModeChange('fuel')}
+            >
+              <Fuel size={14} /> <span className="hidden sm:inline">Combustível</span>
+            </button>
+            <button
+              data-mode="ev"
+              className={appMode === 'ev' ? 'active' : ''}
+              onClick={() => onAppModeChange('ev')}
+            >
+              <Zap size={14} /> <span className="hidden sm:inline">Elétrico</span>
+            </button>
+          </div>
 
           {/* Context chips — shown in results */}
           {hasSearched && (
@@ -194,7 +220,7 @@ export default function Header({
       </div>
 
       {/* ── RESULTS FILTERS — MOBILE ── */}
-      {hasSearched && (
+      {hasSearched && appMode === 'fuel' && (
         <div className="sm:hidden px-4 pb-3 space-y-2 glass-dark" style={{ borderTop: '1px solid var(--border)' }}>
           {/* Fuel pills */}
           <div className="pills-scroll flex gap-2 pt-2">
@@ -290,7 +316,7 @@ export default function Header({
       )}
 
       {/* ── RESULTS FILTERS — DESKTOP ── */}
-      {hasSearched && (
+      {hasSearched && appMode === 'fuel' && (
         <div className="hidden sm:block px-4 sm:px-6 lg:px-8 py-2 glass-dark">
           <div className="max-w-7xl mx-auto flex items-center gap-2">
             {/* Fuel pills */}

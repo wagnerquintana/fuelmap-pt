@@ -34,6 +34,14 @@
   --red:       #f87171;
   --red-dim:   rgba(248,113,113,0.12);
 
+  /* EV */
+  --ev-primary: #22d3ee;
+  --ev-glow: rgba(34,211,238,0.35);
+  --ev-dim: rgba(34,211,238,0.12);
+  --ev-gradient: linear-gradient(135deg, #06b6d4, #22d3ee, #67e8f9);
+  --accent: #818cf8;
+  --blue-dim: rgba(129,140,248,0.12);
+
   /* Radius */
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -328,3 +336,52 @@ input:focus, input:focus-visible { outline: none !important; box-shadow: none !i
 .badge-success { background: var(--green-dim); color: var(--green); }
 .badge-info { background: rgba(129,140,248,0.12); color: var(--color-primary); }
 .badge-warning { background: var(--gold-dim); color: var(--gold); }
+.badge-ev { background: var(--ev-dim); color: var(--ev-primary); }
+
+/* ═══ MODE TOGGLE — Fuel / EV ═══ */
+.mode-toggle {
+  display: inline-flex;
+  border-radius: 12px;
+  padding: 3px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  gap: 2px;
+}
+.mode-toggle button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-dim);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.mode-toggle button:hover:not(.active) {
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.04);
+}
+.mode-toggle button.active[data-mode="fuel"] {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  box-shadow: 0 0 16px rgba(99,102,241,0.3);
+}
+.mode-toggle button.active[data-mode="ev"] {
+  background: linear-gradient(135deg, #06b6d4, #22d3ee);
+  color: white;
+  box-shadow: 0 0 16px var(--ev-glow);
+}
+
+/* EV connector pills */
+.pill-ev {
+  --pill-accent: var(--ev-primary);
+}
+.pill-ev.pill-active {
+  background: var(--ev-gradient);
+  border-color: rgba(34,211,238,0.4);
+  box-shadow: 0 0 20px var(--ev-glow), 0 2px 8px rgba(0,0,0,0.3);
+}

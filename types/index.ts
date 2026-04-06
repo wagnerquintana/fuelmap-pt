@@ -46,3 +46,31 @@ export interface StationFilters {
   locality: string
   sortBy: 'price_asc' | 'price_desc' | 'name'
 }
+
+// ── EV Types ──
+
+export type AppMode = 'fuel' | 'ev'
+
+export interface EVConnector {
+  type: string
+  powerKW: number | null
+  quantity: number
+  status: string | null
+}
+
+export interface EVStation {
+  id: string
+  name: string
+  operator: string | null
+  address: string | null
+  town: string | null
+  state: string | null
+  lat: number
+  lng: number
+  connectors: EVConnector[]
+  totalPoints: number
+  usageCost: string | null
+  isOperational: boolean
+  distance: number | null
+  updated_at: string
+}

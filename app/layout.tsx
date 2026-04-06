@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     template: "%s | FuelMap PT",
   },
   description:
-    "Encontra os postos de combustível mais baratos perto de ti. Mapa interativo com preços atualizados diariamente de todos os postos de Portugal.",
+    "Encontra os postos de combustível mais baratos e postos de carregamento elétrico perto de ti. Preços atualizados diariamente de todos os postos de Portugal.",
   keywords: [
     "combustíveis",
     "gasolina",
@@ -28,6 +28,10 @@ export const metadata: Metadata = {
     "preços gasóleo",
     "bombas de gasolina",
     "DGEG",
+    "carregamento elétrico",
+    "postos EV",
+    "MOBI.E",
+    "veículos elétricos",
   ],
   authors: [{ name: "FuelMap PT" }],
   creator: "FuelMap PT",
