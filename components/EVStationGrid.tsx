@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { MapPin, ArrowUp, SearchX, Zap, BatteryCharging, Plug } from 'lucide-react'
+import { MapPin, ArrowUp, Search, SearchX, Zap, BatteryCharging, Plug } from 'lucide-react'
 import { EVStation, StationFilters, AppMode } from '@/types'
 import { getMaxPowerKW, formatPowerKW, getSpeedLabel, DISTRICTS } from '@/lib/utils'
 import EVStationDetail from '@/components/EVStationDetail'
@@ -413,6 +413,75 @@ function EVWelcomeScreen({ onFiltersChange, onAppModeChange }: {
   onFiltersChange: (f: Partial<StationFilters>) => void
   onAppModeChange: (mode: AppMode) => void
 }) {
+  const [step, setStep] = useState(1)
+  const [selectedDistrict, setSelectedDistrict] = useState('')
+  const [selectedMunicipality, setSelectedMunicipality] = useState('')
+  const [selectedLocality, setSelectedLocality] = useState('')
+  const [municipalities, setMunicipalities] = useState<string[]>([])
+  const [localities, setLocalities] = useState<string[]>([])
+  const [loadingMunicipalities, setLoadingMunicipalities] = useState(false)
+  const [loadingLocalities, setLoadingLocalities] = useState(false)
+  const [municipalitySearch, setMunicipalitySearch] = useState('')
+  const [localitySearch, setLocalitySearch] = useState('')
+
+  async function handleDistrictSelect(district: string) {
+    setSelectedDistrict(district)
+    setLoadingMunicipalities(true)
+    setStep(2)
+    try {
+      const res = await fetch(`/api/municipalities?district=${encodeURIComponent(district)}`)
+      if (res.ok) setMunicipalities(await res.json())
+    } catch { /* ignore */ }
+    setLoadingMunicipalities(false)
+  }
+
+  async function handleMunicipalitySelect(municipality: string) {
+    setSelectedMunicipality(municipality)
+    setLoadingLocalities(true)
+    setStep(3)
+    try {
+      const res = await fetch(`/api/localities?district=${encodeURIComponent(selectedDistrict)}&municipality=${encodeURIComponent(municipality)}`)
+      if (res.ok) setLocalities(await res.json())
+    } catch { /* ignore */ }
+    setLoadingLocalities(false)
+  }
+
+  function handleLocalitySelect(locality: string) {
+    setSelectedLocality(locality)
+  }
+
+  function handleConsultar() {
+    onFiltersChange({
+      district: selectedDistrict,
+      municipality: selectedMunicipality,
+      locality: selectedLocality,
+    })
+  }
+
+  function handleBack() {
+    if (step === 3) {
+      setSelectedMunicipality('')
+      setSelectedLocality('')
+      setLocalities([])
+      setLocalitySearch('')
+      setStep(2)
+    } else if (step === 2) {
+      setSelectedDistrict('')
+      setSelectedMunicipality('')
+      setMunicipalities([])
+      setMunicipalitySearch('')
+      setStep(1)
+    }
+  }
+
+  const filteredMunicipalities = municipalitySearch
+    ? municipalities.filter(m => m.toLowerCase().includes(municipalitySearch.toLowerCase()))
+    : municipalities
+
+  const filteredLocalities = localitySearch
+    ? localities.filter(l => l.toLowerCase().includes(localitySearch.toLowerCase()))
+    : localities
+
   return (
     <div className="h-full overflow-y-auto overscroll-contain relative">
       {/* Ambient orbs */}
@@ -467,47 +536,283 @@ function EVWelcomeScreen({ onFiltersChange, onAppModeChange }: {
           </p>
         </div>
 
-        {/* District selection */}
-        <div className="animate-slide-up" style={{ animationDelay: '120ms' }}>
-          <h2 className="text-center text-xl sm:text-2xl font-bold mb-2" style={{ color: 'white' }}>
-            Selecione o Distrito
-          </h2>
-          <p className="text-center text-sm mb-8" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            Vamos encontrar os postos de carregamento na sua zona
-          </p>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-            {ALL_DISTRICTS.map(d => (
-              <button
-                key={d.name}
-                onClick={() => onFiltersChange({ district: d.name })}
-                className="flex items-center gap-2.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all text-left"
+        {/* Step indicators */}
+        <div className="flex items-center justify-center gap-2 mb-8 animate-slide-up" style={{ animationDelay: '100ms' }}>
+          {[1, 2, 3].map(s => (
+            <div key={s} className="flex items-center gap-1.5 sm:gap-2">
+              <div
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[11px] sm:text-xs font-bold transition-all"
                 style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${d.color}25`,
-                  color: 'rgba(255,255,255,0.8)',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = `${d.color}60`
-                  e.currentTarget.style.background = `${d.color}10`
-                  e.currentTarget.style.color = d.color
-                  e.currentTarget.style.boxShadow = `0 0 24px ${d.color}20`
-                  e.currentTarget.style.transform = 'translateY(-2px)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = `${d.color}25`
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
-                  e.currentTarget.style.color = 'rgba(255,255,255,0.8)'
-                  e.currentTarget.style.boxShadow = 'none'
-                  e.currentTarget.style.transform = 'none'
+                  background: step >= s
+                    ? 'linear-gradient(135deg, #06b6d4, #22d3ee)'
+                    : 'rgba(255,255,255,0.06)',
+                  color: step >= s ? 'white' : 'rgba(255,255,255,0.3)',
+                  boxShadow: step >= s ? '0 0 16px rgba(34,211,238,0.4)' : 'none',
+                  border: step >= s ? 'none' : '1px solid rgba(255,255,255,0.1)',
                 }}
               >
-                <Zap size={14} style={{ color: d.color }} className="shrink-0" />
-                <span className="truncate">{d.name}</span>
-              </button>
-            ))}
-          </div>
+                {s}
+              </div>
+              {s < 3 && (
+                <div className="w-6 sm:w-12 h-[2px] rounded" style={{
+                  background: step > s
+                    ? 'linear-gradient(90deg, #06b6d4, #22d3ee)'
+                    : 'rgba(255,255,255,0.08)',
+                }} />
+              )}
+            </div>
+          ))}
         </div>
+
+        {/* Back button */}
+        {step > 1 && (
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-2 mb-6 px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+            style={{ color: 'rgba(255,255,255,0.6)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+          >
+            ← Voltar
+          </button>
+        )}
+
+        {/* ── STEP 1: DISTRICT ── */}
+        {step === 1 && (
+          <div className="animate-slide-up">
+            <h2 className="text-center text-xl sm:text-2xl font-bold mb-2" style={{ color: 'white' }}>
+              Qual o Distrito?
+            </h2>
+            <p className="text-center text-sm mb-8" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              Selecione o distrito onde pretende carregar
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+              {ALL_DISTRICTS.map(d => (
+                <button
+                  key={d.name}
+                  onClick={() => handleDistrictSelect(d.name)}
+                  className="flex items-center gap-2.5 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all text-left"
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${d.color}25`,
+                    color: 'rgba(255,255,255,0.8)',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.borderColor = `${d.color}60`
+                    e.currentTarget.style.background = `${d.color}10`
+                    e.currentTarget.style.color = d.color
+                    e.currentTarget.style.boxShadow = `0 0 24px ${d.color}20`
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = `${d.color}25`
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
+                    e.currentTarget.style.color = 'rgba(255,255,255,0.8)'
+                    e.currentTarget.style.boxShadow = 'none'
+                    e.currentTarget.style.transform = 'none'
+                  }}
+                >
+                  <Zap size={14} style={{ color: d.color }} className="shrink-0" />
+                  <span className="truncate">{d.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 2: MUNICIPALITY ── */}
+        {step === 2 && (
+          <div className="animate-slide-up">
+            {/* Selected chips */}
+            <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
+              <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{
+                background: 'var(--ev-dim)',
+                color: 'var(--ev-primary)',
+                border: '1px solid rgba(34,211,238,0.25)',
+              }}>
+                ⚡ {selectedDistrict}
+              </span>
+            </div>
+
+            <h2 className="text-center text-xl sm:text-2xl font-bold mb-2" style={{ color: 'white' }}>
+              Qual o seu Concelho?
+            </h2>
+            <p className="text-center text-sm mb-6" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              Selecione o concelho para resultados mais precisos
+            </p>
+
+            {loadingMunicipalities ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className="h-12 skeleton rounded-xl" />
+                ))}
+              </div>
+            ) : (
+              <>
+                {municipalities.length > 10 && (
+                  <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl" style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                  }}>
+                    <Search size={16} style={{ color: 'rgba(255,255,255,0.3)' }} />
+                    <input
+                      type="text"
+                      placeholder="Pesquisar concelho..."
+                      value={municipalitySearch}
+                      onChange={e => setMunicipalitySearch(e.target.value)}
+                      className="flex-1 text-sm bg-transparent outline-none"
+                      style={{ color: 'white' }}
+                    />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {filteredMunicipalities.map(m => (
+                    <button
+                      key={m}
+                      onClick={() => handleMunicipalitySelect(m)}
+                      className="px-4 py-3 rounded-xl text-sm font-semibold transition-all text-left truncate"
+                      style={{
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        color: 'rgba(255,255,255,0.7)',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.borderColor = 'rgba(34,211,238,0.5)'
+                        e.currentTarget.style.background = 'rgba(34,211,238,0.08)'
+                        e.currentTarget.style.color = 'var(--ev-primary)'
+                        e.currentTarget.style.transform = 'translateY(-2px)'
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
+                        e.currentTarget.style.color = 'rgba(255,255,255,0.7)'
+                        e.currentTarget.style.transform = 'none'
+                      }}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── STEP 3: LOCALITY ── */}
+        {step === 3 && (
+          <div className="animate-slide-up">
+            {/* Selected chips */}
+            <div className="flex items-center justify-center gap-2 flex-wrap mb-2">
+              <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{
+                background: 'var(--ev-dim)',
+                color: 'var(--ev-primary)',
+                border: '1px solid rgba(34,211,238,0.25)',
+              }}>
+                ⚡ {selectedDistrict}
+              </span>
+              <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{
+                background: 'rgba(52,211,153,0.12)',
+                color: '#34d399',
+                border: '1px solid rgba(52,211,153,0.25)',
+              }}>
+                🏘️ {selectedMunicipality}
+              </span>
+            </div>
+
+            <h2 className="text-center text-xl sm:text-2xl font-bold mb-2" style={{ color: 'white' }}>
+              Qual a Localidade?
+            </h2>
+            <p className="text-center text-sm mb-6" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              Selecione a localidade ou consulte todo o concelho
+            </p>
+
+            {loadingLocalities ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="h-12 skeleton rounded-xl" />
+                ))}
+              </div>
+            ) : (
+              <>
+                {localities.length > 10 && (
+                  <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl" style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                  }}>
+                    <Search size={16} style={{ color: 'rgba(255,255,255,0.3)' }} />
+                    <input
+                      type="text"
+                      placeholder="Pesquisar localidade..."
+                      value={localitySearch}
+                      onChange={e => setLocalitySearch(e.target.value)}
+                      className="flex-1 text-sm bg-transparent outline-none"
+                      style={{ color: 'white' }}
+                    />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {filteredLocalities.map(l => {
+                    const isSelected = selectedLocality === l
+                    return (
+                      <button
+                        key={l}
+                        onClick={() => handleLocalitySelect(l)}
+                        className="px-4 py-3 rounded-xl text-sm font-semibold transition-all text-left truncate"
+                        style={{
+                          background: isSelected ? 'var(--ev-dim)' : 'rgba(255,255,255,0.04)',
+                          border: `1px solid ${isSelected ? 'rgba(34,211,238,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                          color: isSelected ? 'var(--ev-primary)' : 'rgba(255,255,255,0.7)',
+                          boxShadow: isSelected ? '0 0 20px rgba(34,211,238,0.15)' : 'none',
+                        }}
+                      >
+                        {l}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* CONSULTAR button */}
+                {selectedLocality && (
+                  <div className="mt-8 animate-slide-up">
+                    <button
+                      onClick={handleConsultar}
+                      className="w-full py-4 sm:py-5 rounded-2xl text-lg sm:text-xl font-black text-white transition-all"
+                      style={{
+                        background: 'linear-gradient(135deg, #06b6d4, #22d3ee, #67e8f9)',
+                        boxShadow: '0 0 40px rgba(34,211,238,0.4), 0 8px 32px rgba(0,0,0,0.3)',
+                        border: '1px solid rgba(34,211,238,0.3)',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.boxShadow = '0 0 60px rgba(34,211,238,0.6), 0 12px 40px rgba(0,0,0,0.3)'
+                        e.currentTarget.style.transform = 'translateY(-2px)'
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.boxShadow = '0 0 40px rgba(34,211,238,0.4), 0 8px 32px rgba(0,0,0,0.3)'
+                        e.currentTarget.style.transform = 'none'
+                      }}
+                    >
+                      ⚡ ENCONTRAR POSTOS EV
+                    </button>
+                  </div>
+                )}
+
+                {/* See all municipality */}
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => { setSelectedLocality(''); handleConsultar() }}
+                    className="text-sm font-semibold transition-colors"
+                    style={{ color: 'rgba(255,255,255,0.4)' }}
+                    onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
+                    onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.4)' }}
+                  >
+                    ou ver todos os postos de {selectedMunicipality} →
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Switch to fuel */}
         <div className="mt-12 mb-10 text-center animate-slide-up" style={{ animationDelay: '180ms' }}>

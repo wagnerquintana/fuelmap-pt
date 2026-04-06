@@ -82,11 +82,13 @@ export default function Home() {
     setHasSearched(true)
     const params = new URLSearchParams()
     if (filters.district) params.set('district', filters.district)
+    if (filters.municipality) params.set('municipality', filters.municipality)
+    if (filters.locality) params.set('locality', filters.locality)
     if (filters.search) params.set('search', filters.search)
     const res = await fetch(`/api/ev-stations?${params}`)
     if (res.ok) setEvStations(await res.json())
     setLoadingStations(false)
-  }, [appMode, filters.district, filters.search])
+  }, [appMode, filters.district, filters.municipality, filters.locality, filters.search])
 
   useEffect(() => {
     const t = setTimeout(appMode === 'fuel' ? fetchStations : fetchEVStations, 350)
